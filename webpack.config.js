@@ -2,6 +2,7 @@ const webpack = require('webpack');
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { VueLoaderPlugin } = require('vue-loader');
 
 module.exports = {
@@ -45,9 +46,16 @@ module.exports = {
   },
   plugins: [
     new MiniCssExtractPlugin({ filename: 'styles.css' }),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'src/wasm_exec.js', to: 'wasm_exec.js' },
+      ],
+    }),
     new HtmlWebpackPlugin({
       meta: { viewport: 'width=device-width, initial-scale=1' },
       title: 'App',
+      template: 'src/index.html',
+      inject: false,
     }),
     new VueLoaderPlugin(),
   ]
