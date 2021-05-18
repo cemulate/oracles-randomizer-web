@@ -106,6 +106,8 @@ window.initializeGo = () => {
                 const n = this.writeSync(fd, buf);
                 callback(null, n, buf);
             } else {
+                // buf:
+                arguments[1] = global.Buffer.from(arguments[1]);
                 return global.fs.writeOriginal(...arguments);
             }
         };
@@ -159,20 +161,6 @@ window.initializeGo = () => {
             return global.fs.closeOriginal(fd, () => {
 				return callback(null, ...Array.from(arguments).slice(1));
 			});
-        };
-
-		global.fs.write = function(fd, buf, offset, length, position, callback) {
-            if (fd === 1 || fd === 2) {
-                if (offset !== 0 || length !== buf.length || position !== null) {
-                    throw new Error("not implemented");
-                }
-                const n = this.writeSync(fd, buf);
-                callback(null, n, buf);
-            } else {
-                // buf:
-                arguments[1] = global.Buffer.from(arguments[1]);
-                return global.fs.writeOriginal(...arguments);
-            }
         };
 
 		// Debug:
