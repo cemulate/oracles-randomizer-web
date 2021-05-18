@@ -177,7 +177,7 @@ window.initializeGo = () => {
 			pid: -1,
 			ppid: -1,
 			umask() { throw enosys(); },
-			cwd() { throw enosys(); },
+			cwd() { return '/'; },
 			chdir() { throw enosys(); },
 		}
 	}
