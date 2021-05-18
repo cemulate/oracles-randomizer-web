@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-(() => {
+window.initializeGo = () => {
 	// Map multiple JavaScript environments to a single common API,
 	// preferring web standards over Node.js API.
 	//
@@ -40,51 +40,143 @@
 		return err;
 	};
 
+	const handler = {
+        get: function(target, property) {
+             if(property in target && target[property] instanceof Function) {
+                 return function() {
+                     console.log(property, 'called', arguments);
+                     if (arguments[arguments.length - 1] instanceof Function) {
+                        var origCB = arguments[arguments.length - 1];
+                        var newCB = function() {
+                            console.log('callback for', property, 'get called with args:', arguments);
+                            return Reflect.apply(origCB, arguments.callee, arguments);
+                        }
+                        arguments[arguments.length - 1] = newCB;
+                     }
+                     return Reflect.apply(target[property], target, arguments);
+                 }
+             } else {
+                 return target[property]
+             }
+         }
+    }
+
 	if (!global.fs) {
-		let outputBuf = "";
-		global.fs = {
-			constants: { O_WRONLY: -1, O_RDWR: -1, O_CREAT: -1, O_TRUNC: -1, O_APPEND: -1, O_EXCL: -1 }, // unused
-			writeSync(fd, buf) {
-				outputBuf += decoder.decode(buf);
-				const nl = outputBuf.lastIndexOf("\n");
-				if (nl != -1) {
-					console.log(outputBuf.substr(0, nl));
-					outputBuf = outputBuf.substr(nl + 1);
-				}
-				return buf.length;
-			},
-			write(fd, buf, offset, length, position, callback) {
-				if (offset !== 0 || length !== buf.length || position !== null) {
-					callback(enosys());
-					return;
-				}
-				const n = this.writeSync(fd, buf);
-				callback(null, n);
-			},
-			chmod(path, mode, callback) { callback(enosys()); },
-			chown(path, uid, gid, callback) { callback(enosys()); },
-			close(fd, callback) { callback(enosys()); },
-			fchmod(fd, mode, callback) { callback(enosys()); },
-			fchown(fd, uid, gid, callback) { callback(enosys()); },
-			fstat(fd, callback) { callback(enosys()); },
-			fsync(fd, callback) { callback(null); },
-			ftruncate(fd, length, callback) { callback(enosys()); },
-			lchown(path, uid, gid, callback) { callback(enosys()); },
-			link(path, link, callback) { callback(enosys()); },
-			lstat(path, callback) { callback(enosys()); },
-			mkdir(path, perm, callback) { callback(enosys()); },
-			open(path, flags, mode, callback) { callback(enosys()); },
-			read(fd, buffer, offset, length, position, callback) { callback(enosys()); },
-			readdir(path, callback) { callback(enosys()); },
-			readlink(path, callback) { callback(enosys()); },
-			rename(from, to, callback) { callback(enosys()); },
-			rmdir(path, callback) { callback(enosys()); },
-			stat(path, callback) { callback(enosys()); },
-			symlink(path, link, callback) { callback(enosys()); },
-			truncate(path, length, callback) { callback(enosys()); },
-			unlink(path, callback) { callback(enosys()); },
-			utimes(path, atime, mtime, callback) { callback(enosys()); },
+		global.Buffer = global.BrowserFS.BFSRequire('buffer').Buffer;
+		global.fs = global.BrowserFS.BFSRequire('fs');
+		global.fs.constants = {
+			O_RDONLY: 0,
+			O_WRONLY: 1,
+			O_RDWR: 2,
+			O_CREAT: 64,
+			O_EXCL: 128,
+			O_NOCTTY: 256,
+			O_TRUNC: 512,
+			O_APPEND: 1024,
+			O_DIRECTORY: 65536,
+			O_NOATIME: 262144,
+			O_NOFOLLOW: 131072,
+			O_SYNC: 1052672,
+			O_DIRECT: 16384,
+			O_NONBLOCK: 2048,
 		};
+
+		let outputBuf = "";
+        global.fs.writeSyncOriginal = global.fs.writeSync;
+        global.fs.writeSync = function(fd, buf) {
+            if (fd === 1 || fd === 2) {
+                outputBuf += decoder.decode(buf);
+                const nl = outputBuf.lastIndexOf("\n");
+                if (nl != -1) {
+                    console.log(outputBuf.substr(0, nl));
+                    outputBuf = outputBuf.substr(nl + 1);
+                }
+                return buf.length;
+            } else {
+                return global.fs.writeSyncOriginal(...arguments);
+            }
+        };
+
+        global.fs.writeOriginal = global.fs.write;
+        global.fs.write = function(fd, buf, offset, length, position, callback) {
+            if (fd === 1 || fd === 2) {
+                if (offset !== 0 || length !== buf.length || position !== null) {
+                    throw new Error("not implemented");
+                }
+                const n = this.writeSync(fd, buf);
+                callback(null, n, buf);
+            } else {
+                return global.fs.writeOriginal(...arguments);
+            }
+        };
+
+		global.fs.openOriginal = global.fs.open;
+        global.fs.open = function(path, flags, mode, callback) {
+            var myflags = 'r';
+            var O = global.fs.constants;
+
+            // Convert numeric flags to string flags
+            // FIXME: maybe wrong...
+            if (flags & O.O_WRONLY) { // 'w'
+                myflags = 'w';
+                if (flags & O.O_EXCL) {
+                    myflags = 'wx';
+                }
+            } else if (flags & O.O_RDWR) { // 'r+' or 'w+'
+                if (flags & O.O_CREAT && flags & O.O_TRUNC) { // w+
+                    if (flags & O.O_EXCL) {
+                        myflags = 'wx+';
+                    }  else {
+                        myflags = 'w+';
+                    }
+                } else { // r+
+                    myflags = 'r+';
+                }
+            } else if (flags & O.O_APPEND) { // 'a'
+                throw "Not implmented"
+            }
+            // TODO: handle other cases
+
+            return global.fs.openOriginal(path, myflags, mode, callback);
+        };
+
+		global.fs.fstatOriginal = global.fs.fstat;
+        global.fs.fstat = function(fd, callback) {
+            return global.fs.fstatOriginal(fd, function() {
+                var retStat = arguments[1];
+                delete retStat['fileData'];
+                retStat.atimeMs = retStat.atime.getTime();
+                retStat.mtimeMs = retStat.mtime.getTime();
+                retStat.ctimeMs = retStat.ctime.getTime();
+                retStat.birthtimeMs = retStat.birthtime.getTime();
+                return callback(arguments[0], retStat);
+
+            });
+        };
+
+		global.fs.closeOriginal = global.fs.close;
+        global.fs.close = function(fd, callback) {
+            return global.fs.closeOriginal(fd, () => {
+				console.log('??? ', arguments);
+				return callback(null, ...Array.from(arguments).slice(1));
+			});
+        };
+
+		global.fs.write = function(fd, buf, offset, length, position, callback) {
+            if (fd === 1 || fd === 2) {
+                if (offset !== 0 || length !== buf.length || position !== null) {
+                    throw new Error("not implemented");
+                }
+                const n = this.writeSync(fd, buf);
+                callback(null, n, buf);
+            } else {
+                // buf:
+                arguments[1] = global.Buffer.from(arguments[1]);
+                return global.fs.writeOriginal(...arguments);
+            }
+        };
+
+		global.fs =  new Proxy(global.fs, handler);
 	}
 
 	if (!global.process) {
@@ -623,4 +715,4 @@
 			process.exit(1);
 		});
 	}
-})();
+};
