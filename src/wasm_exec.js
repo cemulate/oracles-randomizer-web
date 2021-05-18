@@ -157,7 +157,6 @@ window.initializeGo = () => {
 		global.fs.closeOriginal = global.fs.close;
         global.fs.close = function(fd, callback) {
             return global.fs.closeOriginal(fd, () => {
-				console.log('??? ', arguments);
 				return callback(null, ...Array.from(arguments).slice(1));
 			});
         };
@@ -176,7 +175,8 @@ window.initializeGo = () => {
             }
         };
 
-		global.fs =  new Proxy(global.fs, handler);
+		// Debug:
+		// global.fs =  new Proxy(global.fs, handler);
 	}
 
 	if (!global.process) {
