@@ -88,7 +88,15 @@ initializeGo = (BrowserFS) => {
                 outputBuf += decoder.decode(buf);
                 const nl = outputBuf.lastIndexOf("\n");
                 if (nl != -1) {
-                    console.log(outputBuf.substr(0, nl));
+					let f;
+					if (global.goStdoutCallback != null && fd == 1) {
+						f = global.goStdoutCallback;
+					} else if (global.goStderrCallback != null && fd == 2) {
+						f = global.goStderrCallback;
+					} else {
+						f = (fd == 1) ? console.log : console.error;
+					}
+                    f(outputBuf.substr(0, nl));
                     outputBuf = outputBuf.substr(nl + 1);
                 }
                 return buf.length;

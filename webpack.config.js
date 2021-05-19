@@ -32,16 +32,13 @@ module.exports = {
         ],
       },
       {
-         test: /\.(png|jpg|gif)$/,
-         use: [
-           {
-             loader: 'url-loader',
-             options: {
-               limit: 8192
-             }
-           }
-         ]
-      }
+        test: /\.png/,
+        type: 'asset/resource',
+      },
+      {
+        test: /\.worker\.js$/,
+        loader: 'worker-loader',
+      },
     ]
   },
   plugins: [
@@ -49,6 +46,7 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         { from: 'src/wasm_exec.js', to: 'wasm_exec.js' },
+        { from: 'src/wasm', to: 'wasm' },
       ],
     }),
     new HtmlWebpackPlugin({
