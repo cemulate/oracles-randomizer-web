@@ -3,12 +3,12 @@
   <div class="container">
     <div class="columns is-centered">
       <div class="column is-narrow">
-        <div class="block" v-if="!inputRomWritten || inputRomDetectedGame == 'invalid'">
+        <div class="block" v-if="!romWritten || detectedGame == 'invalid'">
           <p>Provide a US Oracle of Ages or Oracle of Seasons ROM:</p>
         </div>
         <div class="block">
           <div id="drop-area"
-            v-if="!inputRomWritten"
+            v-if="!romWritten"
             @drop.prevent="uploadRom('drop', $event)"
             @dragover.prevent="uploadHovering = true"
             @dragleave.prevent="uploadHovering = false"
@@ -17,7 +17,7 @@
           </div>
         </div>
         <div class="block">
-          <div class="file is-boxed is-fullwidth" v-if="!inputRomWritten">
+          <div class="file is-boxed is-fullwidth" v-if="!romWritten">
             <label class="file-label">
               <input class="file-input" type="file" name="resume" @change="uploadRom('file', $event)">
               <span class="file-cta">
@@ -28,13 +28,13 @@
             </label>
           </div>
         </div>
-        <div class="block" v-if="inputRomWritten && inputRomDetectedGame != null">
-          <img v-bind:src="logos[inputRomDetectedGame]">
+        <div class="block" v-if="romWritten && detectedGame != null">
+          <img v-bind:src="logos[detectedGame]">
         </div>
-        <div class="block" v-if="inputRomWritten && inputRomDetectedGame != null">
+        <div class="block" v-if="romWritten && detectedGame != null">
           <strong v-html="gameName"></strong> detected.
         </div>
-        <div class="block" v-if="inputRomWasInvalid">
+        <div class="block" v-if="romWasInvalid">
           <strong>Invalid ROM</strong> detected.
         </div>
         <div class="block" v-if="runStatus == RunStatus.DONE">
@@ -54,30 +54,30 @@
               <div class="field">
                 <label class="label">Randomizer Version</label>
                 <div class="select is-fullwidth">
-                  <select v-model="randomizerBranch">
+                  <select v-model="branch">
                     <option v-for="branchName in branchNames" v-bind:key="branchName" v-html="branchName"></option>
                   </select>
                 </div>
               </div>
               <div class="columns">
                 <div class="column is-narrow">
-                  <em>Version: &nbsp;</em><span class="tag is-info" v-html="randomizerBranchData[randomizerBranch].tag"></span>
+                  <em>Version: &nbsp;</em><span class="tag is-info" v-html="branchData[branch].tag"></span>
                 </div>
                 <div class="column"></div>
                 <div class="column is-narrow">
-                  <a target="_blank" v-bind:href="randomizerBranchData[randomizerBranch].url">Release Page</a>
+                  <a target="_blank" v-bind:href="branchData[branch].url">Release Page</a>
                 </div>
               </div>
               <label class="checkbox">
-                <input type="checkbox" v-model="randomizerOptions.useSeed">
+                <input type="checkbox" v-model="ropts.useSeed">
                 Use custom seed <small>(8-digit hex)</small>
               </label>
               <div class="field">
                 <div class="control">
                   <input class="input seed-input" type="text"
-                    v-bind:disabled="!randomizerOptions.useSeed"
-                    v-bind:class="{ 'is-danger': randomizerOptions.useSeed && !seedValid }"
-                    v-model="randomizerOptions.seed"
+                    v-bind:disabled="!ropts.useSeed"
+                    v-bind:class="{ 'is-danger': ropts.useSeed && !seedValid }"
+                    v-model="ropts.seed"
                     pattern="[0-9a-f]{8}">
                 </div>
               </div>
@@ -85,48 +85,48 @@
             <div class="column is-one-half">
               <div class="field">
                 <label class="checkbox">
-                  <input type="checkbox" v-model="randomizerOptions.treewarp" title="warp to ember tree by pressing start+B on map screen">
+                  <input type="checkbox" v-model="ropts.treewarp" title="warp to ember tree by pressing start+B on map screen">
                   Tree Warp
                 </label>
               </div>
               <div class="field">
                 <label class="checkbox">
-                  <input type="checkbox" v-model="randomizerOptions.dungeons" title="shuffle dungeon entrances (disabled in entrance rando)">
+                  <input type="checkbox" v-model="ropts.dungeons" title="shuffle dungeon entrances (disabled in entrance rando)">
                   Dungeon Shuffle
                 </label>
               </div>
               <div class="field">
                 <label class="checkbox">
-                  <input type="checkbox" v-model="randomizerOptions.portals"
-                    v-bind:disabled="inputRomDetectedGame == 'ages'"
+                  <input type="checkbox" v-model="ropts.portals"
+                    v-bind:disabled="detectedGame == 'ages'"
                     title="shuffle subrosia portal connections (seasons)">
                   Portal Shuffle (Seasons)
                 </label>
               </div>
               <div class="field">
                 <label class="checkbox">
-                  <input type="checkbox" v-model="randomizerOptions.race">
+                  <input type="checkbox" v-model="ropts.race">
                   Race
                 </label>
               </div>
               <div class="field">
                 <label class="checkbox">
-                  <input type="checkbox" v-model="randomizerOptions.hard" title="enable more difficult logic">
+                  <input type="checkbox" v-model="ropts.hard" title="enable more difficult logic">
                   Hard Logic
                 </label>
               </div>
               <div class="field">
                 <label class="checkbox">
-                  <input type="checkbox" v-model="randomizerOptions.keysanity"
-                    v-bind:disabled="randomizerBranch != 'keysanity'"
+                  <input type="checkbox" v-model="ropts.keysanity"
+                    v-bind:disabled="branch != 'keysanity'"
                     title="shuffle dungeon keys, maps, and compasses outside their dungeons">
                   Keysanity
                 </label>
               </div>
               <div class="field">
                 <label class="checkbox">
-                  <input type="checkbox" v-model="randomizerOptions.entrances"
-                    v-bind:disabled="randomizerBranch != 'entrance-rando'"
+                  <input type="checkbox" v-model="ropts.entrances"
+                    v-bind:disabled="branch != 'entrance-rando'"
                     title="shuffle all entrances">
                   Random Entrances
                 </label>
@@ -144,7 +144,7 @@
             </div>
           </div>
         </div>
-        <div class="block is-fullwidth" v-if="inputRomWritten">
+        <div class="block is-fullwidth" v-if="romWritten">
           <span
             class="console-line"
             v-for="(line, index) in consoleLines"
@@ -156,14 +156,6 @@
       </div>
     </div>
   </div>
-
-    <!-- <p><span v-html="loading ? 'loading ...' : 'done!'"></span>, <span v-html="inputRomWritten ? 'ROM Ready!' : 'no ROM ...'"></span></p>
-    <p>Choose file: <input type="file" @change="uploadRom($event)"></p>
-    <p><input class="button" type="button" @click="runRandomizer" v-bind:value="runStatus == RunStatus.RUNNING ? 'Running ...' : 'Randomize'" /></p>
-    <p><a v-bind:download="romDownload.name" v-if="runStatus == RunStatus.DONE" v-bind:href="romDownload.link">Download ROM</a></p>
-    <p><a v-bind:download="logDownload.name" v-if="runStatus == RunStatus.DONE" v-bind:href="logDownload.link">Download Log</a></p>
-    <textarea cols="80" rows="20" readonly v-bind:value="runStdout"></textarea>
-    <textarea cols="80" rows="20" readonly v-bind:value="runStderr"></textarea> -->
 </section>
 </template>
 
@@ -172,7 +164,7 @@ import { initMainThreadFilesystem, writeFile, readFile, readRootDir, clearRootDi
 import { detectGame } from '../lib/util.js';
 import ageslogoImage from '../assets/ageslogo.png';
 import seasonslogoImage from '../assets/seasonslogo.png';
-import randomizerBranchData from '../lib/branches.json';
+import branchData from '../lib/branches.json';
 import GoWorker from '../lib/go-worker.worker.js';
 
 export default {
@@ -184,21 +176,21 @@ export default {
           ages: ageslogoImage,
           seasons: seasonslogoImage,
         },
-        randomizerOptions: {
+        ropts: {
             useSeed: false,
             seed: '',
             race: false,
             hard: false,
             treewarp: true,
-            dungeons: true,
+            dungeons: false,
             portals: false,
             keysanity: false,
         },
-        randomizerBranchData,
-        randomizerBranch: 'original',
-        inputRomWritten: false,
-        inputRomWasInvalid: false,
-        inputRomDetectedGame: null,
+        branchData,
+        branch: 'original',
+        romWritten: false,
+        romWasInvalid: false,
+        detectedGame: null,
         romDownload: null,
         logDownload: null,
         RunStatus: { READY: 0, RUNNING: 1, DONE: 2 },
@@ -219,55 +211,55 @@ export default {
     },
     computed: {
       gameName() {
-        if (this.inputRomDetectedGame == null) return 'Invalid ROM';
-        return this.inputRomDetectedGame == 'ages' ? 'Oracle of Ages' : 'Oracle of Seasons';
+        if (this.detectedGame == null) return 'Invalid ROM';
+        return this.detectedGame == 'ages' ? 'Oracle of Ages' : 'Oracle of Seasons';
       },
       displayedImage() {
-        if (this.inputRomDetectedGame == null) return '';
-        return this.inputRomDetectedGame == 'ages' ? this.logos.ages : this.logos.seasons;
+        if (this.detectedGame == null) return '';
+        return this.detectedGame == 'ages' ? this.logos.ages : this.logos.seasons;
       },
       branchNames() {
-        return Object.keys(this.randomizerBranchData);
+        return Object.keys(this.branchData);
       },
       seedValid() {
-        return /[0-9a-f]{8}/.test(this.randomizerOptions.seed);
+        return /[0-9a-f]{8}/.test(this.ropts.seed);
       },
       runDisabled() {
         return (this.workerLoading
           || this.runStatus != this.RunStatus.READY
-          || !this.inputRomWritten
-          || this.inputRomDetectedGame == 'invalid'
-          || (this.randomizerOptions.useSeed && !this.seedValid));
+          || !this.romWritten
+          || this.detectedGame == 'invalid'
+          || (this.ropts.useSeed && !this.seedValid));
       }
     },
     methods: {
         async uploadRom(method, event) {
-            this.inputRomWasInvalid = false;
-            this.inputRomWritten = false;
+            this.romWasInvalid = false;
+            this.romWritten = false;
             this.uploadHovering = false;
             let rom = method == 'drop' ? event.dataTransfer.files[0] : event.target.files[0];
             let data = await rom.arrayBuffer();
-            this.inputRomDetectedGame = detectGame(data);
-            if (this.inputRomDetectedGame == null) {
-              this.inputRomWasInvalid = true;
+            this.detectedGame = detectGame(data);
+            if (this.detectedGame == null) {
+              this.romWasInvalid = true;
             } else {
               await writeFile('/rom.gbc', data);
-              this.inputRomWritten = true;
+              this.romWritten = true;
             }
         },
         runRandomizer() {
             this.runStatus = this.RunStatus.RUNNING;
             let argv = [''];
-            if (this.randomizerOptions.treewarp) argv.push('-treewarp');
-            if (this.randomizerOptions.dungeons) argv.push('-dungeons');
-            if (this.randomizerOptions.portals && this.inputRomDetectedGame == 'seasons') argv.push('-portals');
-            if (this.randomizerOptions.hard) argv.push('-hard');
-            if (this.randomizerOptions.keysanity) argv.push('-keysanity');
-            if (this.randomizerOptions.entrances) argv.push('-entrances');
-            if (this.randomizerOptions.useSeed) argv.push(`-seed=${ this.randomizerOptions.seed }`);
-            if (this.randomizerOptions.race) argv.push('-race');
+            if (this.ropts.treewarp) argv.push('-treewarp');
+            if (this.ropts.dungeons) argv.push('-dungeons');
+            if (this.ropts.portals && this.detectedGame == 'seasons') argv.push('-portals');
+            if (this.ropts.hard) argv.push('-hard');
+            if (this.ropts.keysanity) argv.push('-keysanity');
+            if (this.ropts.entrances) argv.push('-entrances');
+            if (this.ropts.useSeed) argv.push(`-seed=${ this.ropts.seed }`);
+            if (this.ropts.race) argv.push('-race');
             argv.push('/rom.gbc');
-            this.goWorker.postMessage({ type: 'run', instance: this.randomizerBranch, argv });
+            this.goWorker.postMessage({ type: 'run', instance: this.branch, argv });
         },
         async handleGoWorkerMessage({ data }) {
             if (data.type == 'init' && data.done) {
@@ -289,7 +281,7 @@ export default {
             let romBlob = new Blob([rom.buffer]);
             this.romDownload = { link: URL.createObjectURL(romBlob, { type: 'application/octet-stream' }), name: romName };
             
-            if (!this.randomizerOptions.race) {
+            if (!this.ropts.race) {
               let logName = files.find(x => x.startsWith('oo') && x.endsWith('txt'));
               let log = await readFile(`/${ logName }`);
               let logBlob = new Blob([log.buffer]);
