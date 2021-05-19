@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-window.initializeGo = () => {
+initializeGo = (BrowserFS) => {
 	// Map multiple JavaScript environments to a single common API,
 	// preferring web standards over Node.js API.
 	//
@@ -62,8 +62,8 @@ window.initializeGo = () => {
     }
 
 	if (!global.fs) {
-		global.Buffer = global.BrowserFS.BFSRequire('buffer').Buffer;
-		global.fs = global.BrowserFS.BFSRequire('fs');
+		global.Buffer = BrowserFS.BFSRequire('buffer').Buffer;
+		global.fs = BrowserFS.BFSRequire('fs');
 		global.fs.constants = {
 			O_RDONLY: 0,
 			O_WRONLY: 1,
