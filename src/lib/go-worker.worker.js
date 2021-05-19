@@ -16,13 +16,15 @@ self.onmessage = async ({ data }) => {
         
         self.wasmInstances = {};
 
-        await Promise.all(Object.keys(branches).map(async (k) => {
-            let result = await WebAssembly.instantiateStreaming(fetch(`wasm/${ k }.wasm`), self.goRunner.importObject);
-            self.wasmInstances[k] = result.instance;
-        }));
-
         self.postMessage({ type: 'init', done: true });
     } else if (data.type == 'run') {
+        if (!(data.instance in self.wasmInstances)) {
+            self.postMessage({ type: 'run', stage: 'Downloading randomizer ...' });
+            let result = await WebAssembly.instantiateStreaming(fetch(`wasm/${ data.instance }.wasm`), self.goRunner.importObject);
+            self.wasmInstances[data.instance] = result.instance;
+        }
+
+        self.postMessage({ type: 'run', stage: 'Running randomizer ...' });
         self.goRunner.argv = data.argv;
         let instance = self.wasmInstances[data.instance];
         try {

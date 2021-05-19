@@ -145,6 +145,7 @@
           </div>
         </div>
         <div class="block is-fullwidth" v-if="romWritten">
+          <strong v-if="workerRunStage != null" class="console-line" v-html="workerRunStage"></strong>
           <span
             class="console-line"
             v-for="(line, index) in consoleLines"
@@ -195,6 +196,7 @@ export default {
         logDownload: null,
         RunStatus: { READY: 0, RUNNING: 1, DONE: 2 },
         runStatus: 0,
+        workerRunStage: null,
         consoleLines: [],
     }),
     async created() {
@@ -268,6 +270,8 @@ export default {
                 this.consoleLines.push({ type: 'stdout', content: data.content });
             } else if (data.type == 'stderr') {
                 this.consoleLines.push({ type: 'stderr', content: data.content });
+            } else if (data.type == 'run' && 'stage' in data) {
+                this.workerRunStage = data.stage;
             } else if (data.type == 'run' && data.done) {
                 this.goWorkerFinished();
             }
