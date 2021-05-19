@@ -5,7 +5,8 @@
   "author": "Author",
   "scripts": {
     "serve": "webpack serve --mode=development --hot",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "publish": "gh-pages -d dist"
   },
   "devDependencies": {
     "@babel/core": "^7.14.3",
@@ -15,6 +16,7 @@
     "bulma": "^0.9.2",
     "copy-webpack-plugin": "^8.1.1",
     "css-loader": "^5.2.4",
+    "gh-pages": "^3.1.0",
     "html-webpack-plugin": "^5.3.1",
     "mini-css-extract-plugin": "^1.6.0",
     "node-sass": "^6.0.0",
