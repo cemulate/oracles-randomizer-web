@@ -1,0 +1,17 @@
+{
+    "original": {
+        "url": "https://github.com/jangler/oracles-randomizer/releases/tag/4.1.4/",
+        "maintainer": "jangler",
+        "tag": "4.1.4"
+    },
+    "keysanity": {
+        "url": "https://github.com/Drenn1/oracles-randomizer/releases/tag/keysanity-alpha4",
+        "maintainer": "Drenn1",
+        "tag": "keysanity-alpha4"
+    },
+    "entrance-rando": {
+        "url": "https://github.com/vinheim3/oracles-randomizer/releases/tag/1.6.1_entrance",
+        "maintainer": "vinheim3",
+        "tag": "1.6.1_entrance"
+    }
+}

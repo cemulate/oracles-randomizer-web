@@ -1,6 +1,7 @@
 // self.importScripts('wasm_exec.js');
 import * as BrowserFS from 'browserfs';
-import { initWorkerThreadFilesystem, readRootDir } from './fs.js';
+import { initWorkerThreadFilesystem } from './fs.js';
+import branches from './branches.json';
 self.importScripts('wasm_exec.js');
 
 self.onmessage = async ({ data }) => {
@@ -15,8 +16,10 @@ self.onmessage = async ({ data }) => {
         
         self.wasmInstances = {};
 
-        let result = await WebAssembly.instantiateStreaming(fetch('wasm/master.wasm'), self.goRunner.importObject);
-        self.wasmInstances.master = result.instance;
+        await Promise.all(Object.keys(branches).map(async (k) => {
+            let result = await WebAssembly.instantiateStreaming(fetch(`wasm/${ k }.wasm`), self.goRunner.importObject);
+            self.wasmInstances[k] = result.instance;
+        }));
 
         self.postMessage({ type: 'init', done: true });
     } else if (data.type == 'run') {

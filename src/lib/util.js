@@ -15,21 +15,5 @@ export function detectGame(buffer) {
         // wasn't seasons
     }
 
-    return 'unknown';
-}
-
-export function buildArgvFlags(game, opts) {
-    let { treewarp, dungeons, portals, hard, useSeed, seed, race } = opts;
-    let multiString = '-multi=';
-    multiString += game == 'ages' ? 'a+' : 's+';
-    multiString += [
-        treewarp ? 't' : '',
-        dungeons ? 'd' : '',
-        hard ? 'h' : '',
-        game == 'seasons' && portals ? 'p' : '',
-    ].join('');
-    
-    let argv = [multiString];
-    if (race) argv.push('-race=true');
-    return argv;
+    return null;
 }
