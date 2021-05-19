@@ -1,2 +1,4 @@
 node_modules
 dist
+# Don't track compiled WASM files
+src/wasm
