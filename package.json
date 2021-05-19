@@ -1,8 +1,8 @@
 {
-  "name": "new-application",
+  "name": "oracles-randomizer-web",
   "version": "1.0.0",
-  "description": "A new web application",
-  "author": "Author",
+  "description": "Web interface for oracles-randomizer",
+  "author": "Chase Meadors",
   "scripts": {
     "serve": "webpack serve --mode=development --hot",
     "build": "webpack --mode production",
