@@ -1,23 +1,6 @@
-# Static Web App Stack
+# Web Oracles Randomizer
 
-A minimal front-end web application using [Webpack](https://webpack.github.io/) and [Bulma](https://bulma.io/)
+This is a web front-end for [https://github.com/jangler/oracles-randomizer](oracles-randomizer) and its relevant forks.
+The app is entirely client-side, and works by running the original randomizer programs themselves in the browser by compiling them to WebAssembly.
 
-To try it out, clone the repo and run
-
-```
-npm install
-npm run serve
-```
-
-# Extras
-
-The `master` branch is a fairly barebones web app skeleton.
-Commonly, you may want more:
-
-## Vue
-
-The `with-vue` branch includes a basic setup of Vue
-
-## PWA Support
-
-The `with-pwa-support` (based on `with-vue`) includes basic PWA support (service workers w/ workbox caching setup, a manifest and icons)
+Use it here: [https://cemulate.github.io/oracles-randomizer-web](https://cemulate.github.io/oracles-randomizer-web)
