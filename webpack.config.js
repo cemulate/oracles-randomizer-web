@@ -45,13 +45,13 @@ module.exports = {
     new MiniCssExtractPlugin({ filename: 'styles.css' }),
     new CopyWebpackPlugin({
       patterns: [
+        { from: 'src/assets/favicon.png', to: 'favicon.png' },
         { from: 'src/wasm_exec.js', to: 'wasm_exec.js' },
         { from: 'src/wasm', to: 'wasm' },
       ],
     }),
     new HtmlWebpackPlugin({
       meta: { viewport: 'width=device-width, initial-scale=1' },
-      title: 'App',
       template: 'src/index.html',
       inject: false,
     }),
