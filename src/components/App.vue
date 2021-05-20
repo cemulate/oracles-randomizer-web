@@ -29,7 +29,7 @@
           </div>
         </div>
         <div class="block" v-if="romWritten && detectedGame != null">
-          <img v-bind:src="logos[detectedGame]">
+          <img id="logo-img" v-bind:src="logos[detectedGame]">
         </div>
         <div class="block" v-if="romWritten && detectedGame != null">
           <strong v-html="gameName"></strong> detected.
@@ -316,6 +316,11 @@ export default {
       font-size: 1.5rem;
       opacity: 0.7;
     }
+  }
+
+  #logo-image {
+    width: 400px;
+    height: 272px;
   }
 
   .console-line {
