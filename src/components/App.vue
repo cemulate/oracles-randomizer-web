@@ -218,36 +218,36 @@ export default {
         goWorker: null,
         uploadHovering: false,
         logos: {
-          ages: ageslogoImage,
-          seasons: seasonslogoImage,
+            ages: ageslogoImage,
+            seasons: seasonslogoImage,
         },
         globalOpts: {
-          race: false,
-          useSeed: false,
-          seed: '',
+            race: false,
+            useSeed: false,
+            seed: '',
         },
         worldRopts: [
-          {
-            game: 'none',
-            treewarp: true,
-            hard: false,
-            dungeons: false,
-            portals: false,
-            keysanity: false,
-            entrances: false,
-          },
+            {
+                game: 'none',
+                treewarp: true,
+                hard: false,
+                dungeons: false,
+                portals: false,
+                keysanity: false,
+                entrances: false,
+            },
         ],
         multiWorld: {
-          enabled: false,
-          count: 1,
-          useSameOptions: true,
-          selectedWorld: 0,
+            enabled: false,
+            count: 1,
+            useSameOptions: true,
+            selectedWorld: 0,
         },
         branchData,
         branch: 'original',
         gamesAvailable: {
-          seasons: false,
-          ages: false,
+            seasons: false,
+            ages: false,
         },
         lastRomWasInvalid: false,
         zipDownload: null,
@@ -272,55 +272,55 @@ export default {
         await Promise.all([writeFile('seasons.gbc', ''), writeFile('ages.gbc', '')]);
     },
     computed: {
-      selectedRopts() {
-        return this.worldRopts[this.multiWorld.selectedWorld];
-      },
-      bothRomsWrittenToFs() {
-        return this.gamesAvailable.seasons && this.gamesAvailable.ages;
-      },
-      gamesAvailableNames() {
-        return Object.keys(this.gamesAvailable).filter(k => this.gamesAvailable[k]);
-      },
-      branchNames() {
-        return Object.keys(this.branchData);
-      },
-      seedValid() {
-        return /[0-9a-f]{8}/.test(this.globalOpts.seed);
-      },
-      runDisabled() {
-        return (this.workerLoading
-          || this.runStatus != this.RunStatus.READY
-          || this.worldRopts.some(({ game }) => (game == 'none' || !this.gamesAvailable[game]))
-          || (this.globalOpts.useSeed && !this.seedValid));
-      }
+        selectedRopts() {
+            return this.worldRopts[this.multiWorld.selectedWorld];
+        },
+        bothRomsWrittenToFs() {
+            return this.gamesAvailable.seasons && this.gamesAvailable.ages;
+        },
+        gamesAvailableNames() {
+            return Object.keys(this.gamesAvailable).filter(k => this.gamesAvailable[k]);
+        },
+        branchNames() {
+            return Object.keys(this.branchData);
+        },
+        seedValid() {
+            return /[0-9a-f]{8}/.test(this.globalOpts.seed);
+        },
+        runDisabled() {
+            return (this.workerLoading
+            || this.runStatus != this.RunStatus.READY
+            || this.worldRopts.some(({ game }) => (game == 'none' || !this.gamesAvailable[game]))
+            || (this.globalOpts.useSeed && !this.seedValid));
+        }
     },
     methods: {
         gameName(game) {
-          if (game == 'seasons') return 'Oracle of Seasons';
-          if (game == 'ages') return 'Oracle of Ages';
-          return null;
+            if (game == 'seasons') return 'Oracle of Seasons';
+            if (game == 'ages') return 'Oracle of Ages';
+            return null;
         },
         async uploadRom(method, event) {
             this.lastRomWasInvalid = false;
             this.uploadHovering = false;
             let roms = method == 'drop' ? event.dataTransfer.files : event.target.files;
             for (let rom of roms) {
-              let data = await rom.arrayBuffer();
-              let detectedGame = detectGame(data);
-              if (detectedGame == null) {
-                  this.lastRomWasInvalid = true;
-              } else {
-                  await writeFile(detectedGame == 'seasons' ? 'seasons.gbc' : 'ages.gbc', data);
-                  if (detectedGame == 'seasons') this.gamesAvailable.seasons = true;
-                  if (detectedGame == 'ages') this.gamesAvailable.ages = true;
-              }
+                let data = await rom.arrayBuffer();
+                let detectedGame = detectGame(data);
+                if (detectedGame == null) {
+                    this.lastRomWasInvalid = true;
+                } else {
+                    await writeFile(detectedGame == 'seasons' ? 'seasons.gbc' : 'ages.gbc', data);
+                    if (detectedGame == 'seasons') this.gamesAvailable.seasons = true;
+                    if (detectedGame == 'ages') this.gamesAvailable.ages = true;
+                }
             }
         },
         worldCountUpdated(event) {
-          let defaultOptions = this.worldRopts[0];
-          while (this.worldRopts.length < this.multiWorld.count) {
-            this.worldRopts.push({ ...defaultOptions });
-          }
+            let defaultOptions = this.worldRopts[0];
+            while (this.worldRopts.length < this.multiWorld.count) {
+                this.worldRopts.push({ ...defaultOptions });
+            }
         },
         runRandomizer() {
             this.runStatus = this.RunStatus.RUNNING;
@@ -360,8 +360,8 @@ export default {
             let files = (await readRootDir()).filter(x => /^o(.+)(gbc|txt)$/.test(x));
             let zip = new JSZip();
             for (let f of files) {
-              let data = await readFile(`/${ f }`);
-              zip.file(f, data.buffer);
+                let data = await readFile(`/${ f }`);
+                zip.file(f, data.buffer);
             }
 
             let zipData = await zip.generateAsync({ type: 'uint8array' });
@@ -372,16 +372,16 @@ export default {
         },
     },
     watch: {
-      gamesAvailable: {
-        handler: function (oldVal, newVal) {
-          if (!this.multiWorld.enabled || this.multiWorld.useSameOptions) {
-            if (newVal.seasons && !newVal.ages) this.worldRopts[0].game = 'seasons';
-            if (newVal.ages && !newVal.seasons) this.worldRopts[0].game = 'ages';
-            console.log('hey');
-          }
+        gamesAvailable: {
+            handler: function (oldVal, newVal) {
+            if (!this.multiWorld.enabled || this.multiWorld.useSameOptions) {
+                if (newVal.seasons && !newVal.ages) this.worldRopts[0].game = 'seasons';
+                if (newVal.ages && !newVal.seasons) this.worldRopts[0].game = 'ages';
+                console.log('hey');
+            }
+            },
+            deep: true,
         },
-        deep: true,
-      },
     },
 };
 </script>
