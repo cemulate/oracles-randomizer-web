@@ -1,3 +1,5 @@
+import { readFile } from './fs.js';
+
 export function detectGame(buffer) {
     let view = new Uint8Array(buffer);
     let decoder = new TextDecoder('utf-8');
@@ -16,4 +18,35 @@ export function detectGame(buffer) {
     }
 
     return null;
+}
+
+export function buildMultiworldArgv(globalOpts, worldRopts) {
+    let argv = [''];
+    if (globalOpts.useSeed) argv.push(`-seed=${ globalOpts.seed }`);
+    if (globalOpts.race) argv.push('-race');
+
+    let multiParts = worldRopts.map(opts => {
+        let part = opts.game == 'seasons' ? 's+' : 'a+';
+        if (opts.treewarp) part += 't';
+        if (opts.hard) part += 'h';
+        if (opts.dungeons) part += 'd';
+        if (opts.portals && opts.game == 'seasons') part += 'p';
+        if (opts.keysanity) part += 'k';
+        if (opts.entrances) part += 'e';
+        return part;
+    });
+
+    argv.push(`-multi=${ multiParts.join(',') }`);
+    return argv;
+}
+
+export async function createDownload(fileName, fileType, player=null) {
+    let data = await readFile(`/${ fileName }`);
+    let blob = new Blob([data.buffer]);
+    return {
+        link: URL.createObjectURL(blob, { type: fileType == 'gbc' ? 'application/octet-stream' : 'text/plain' }),
+        name: fileName,
+        type: fileType,
+        ...(player != null ? { player } : {}),
+    };
 }

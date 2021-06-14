@@ -1,14 +1,15 @@
 <template>
 <section id="root" class="section">
-  <div class="container">
+  <div class="container is-fluid">
     <div class="columns is-centered">
       <div class="column is-narrow">
-        <div class="block" v-if="!romWritten || detectedGame == 'invalid'">
-          <p>Provide a US Oracle of Ages or Oracle of Seasons ROM:</p>
+        <div class="block" v-if="!bothRomsWrittenToFs">
+          <p>Provide ROM(s) here:</p>
+          <small>Oracles of Ages or Oracle of Seasons U.S. version</small>
         </div>
         <div class="block">
           <div id="drop-area"
-            v-if="!romWritten"
+            v-if="!bothRomsWrittenToFs"
             @drop.prevent="uploadRom('drop', $event)"
             @dragover.prevent="uploadHovering = true"
             @dragleave.prevent="uploadHovering = false"
@@ -17,7 +18,7 @@
           </div>
         </div>
         <div class="block">
-          <div class="file is-boxed is-fullwidth" v-if="!romWritten">
+          <div class="file is-boxed is-fullwidth" v-if="!bothRomsWrittenToFs">
             <label class="file-label">
               <input class="file-input" type="file" name="resume" @change="uploadRom('file', $event)">
               <span class="file-cta">
@@ -28,26 +29,22 @@
             </label>
           </div>
         </div>
-        <div class="block" v-if="romWritten && detectedGame != null">
-          <img id="logo-img" v-bind:src="logos[detectedGame]">
-        </div>
-        <div class="block" v-if="romWritten && detectedGame != null">
-          <strong v-html="gameName"></strong> detected.
-        </div>
-        <div class="block" v-if="romWasInvalid">
+        <div class="block" v-if="lastRomWasInvalid">
           <strong>Invalid ROM</strong> detected.
         </div>
+        <div class="block" v-if="gamesAvailable.seasons">
+          <img class="logo-img" v-bind:src="logos.seasons">
+          <p><strong>✔ Oracle of Seasons Loaded</strong></p>
+        </div>
+        <div class="block" v-if="gamesAvailable.ages">
+          <img class="logo-img" v-bind:src="logos.ages">
+          <p><strong>✔ Oracle of Ages Loaded</strong></p>
+        </div>
         <div class="block" v-if="runStatus == RunStatus.DONE">
-          <strong>Randomizer Finished!</strong>
-          <div class="content">
-            <ul>
-              <li v-if="romDownload != null"><a v-bind:download="romDownload.name" v-bind:href="romDownload.link">Download ROM</a></li>
-              <li v-if="logDownload != null"><a v-bind:download="logDownload.name" v-bind:href="logDownload.link">Download Spoiler Log</a></li>
-            </ul>
-          </div>
+          <strong><a class="button is-fullwidth is-success" download="oracles-randomizer.zip" v-bind:href="zipDownload">⬇ Download ZIP file</a></strong>
         </div>
       </div>
-      <div class="column is-6">
+      <div class="column is-5">
         <div class="block">
           <div class="columns">
             <div class="column is-one-half">
@@ -69,67 +66,113 @@
                 </div>
               </div>
               <label class="checkbox">
-                <input type="checkbox" v-model="ropts.useSeed">
+                <input type="checkbox" v-model="globalOpts.useSeed">
                 Use custom seed <small>(8-digit hex)</small>
               </label>
               <div class="field">
                 <div class="control">
                   <input class="input seed-input" type="text"
-                    v-bind:disabled="!ropts.useSeed"
-                    v-bind:class="{ 'is-danger': ropts.useSeed && !seedValid }"
-                    v-model="ropts.seed"
+                    v-bind:disabled="!globalOpts.useSeed"
+                    v-bind:class="{ 'is-danger': globalOpts.useSeed && !seedValid }"
+                    v-model="globalOpts.seed"
                     pattern="[0-9a-f]{8}">
                 </div>
               </div>
             </div>
             <div class="column is-one-half">
+              <div class="field is-grouped">
+                <div class="control is-expanded">
+                  <label class="checkbox">
+                    <input type="checkbox" v-model="multiWorld.enabled">
+                    Multiworld
+                  </label>
+                </div>
+                <div class="control">
+                  <input type="number" class="input" v-model="multiWorld.count" min="1" max="99" 
+                    v-bind:disabled="!multiWorld.enabled"
+                    v-on:change="worldCountUpdated">
+                </div>
+              </div>
               <div class="field">
                 <label class="checkbox">
-                  <input type="checkbox" v-model="ropts.treewarp" title="warp to ember tree by pressing start+B on map screen">
-                  Tree Warp
+                  <input type="checkbox" v-bind:disabled="!multiWorld.enabled" v-model="multiWorld.useSameOptions">
+                  Same game/options for all worlds 
                 </label>
               </div>
               <div class="field">
                 <label class="checkbox">
-                  <input type="checkbox" v-model="ropts.dungeons" title="shuffle dungeon entrances (disabled in entrance rando)">
-                  Dungeon Shuffle
+                  <input type="checkbox" v-model="globalOpts.race">
+                  Race mode
                 </label>
               </div>
-              <div class="field">
-                <label class="checkbox">
-                  <input type="checkbox" v-model="ropts.portals"
-                    v-bind:disabled="detectedGame == 'ages'"
-                    title="shuffle subrosia portal connections (seasons)">
-                  Portal Shuffle (Seasons)
-                </label>
+            </div>
+          </div>
+          <nav class="level" v-if="multiWorld.enabled && !multiWorld.useSameOptions">
+            <div class="level-left">
+              <button class="button" v-on:click="multiWorld.selectedWorld -= 1" v-bind:disabled="multiWorld.selectedWorld == 0">⬅</button>
+            </div>
+            <div class="level-item">
+              <strong>Settings for world <span v-html="multiWorld.selectedWorld + 1"></span></strong>
+            </div>
+            <div class="level-right">
+              <button class="button" v-on:click="multiWorld.selectedWorld += 1" v-bind:disabled="multiWorld.selectedWorld == multiWorld.count - 1">➡</button>
+            </div>
+          </nav>
+          <div class="box">
+            <div class="field">
+              <div class="select">
+                <select v-model="selectedRopts.game">
+                  <option value="none">Select game ...</option>
+                  <option v-for="name in gamesAvailableNames" v-bind:key="name" v-bind:value="name" v-html="gameName(name)"></option>
+                </select>
               </div>
-              <div class="field">
-                <label class="checkbox">
-                  <input type="checkbox" v-model="ropts.race">
-                  Race
-                </label>
+            </div>
+            <div class="columns">
+              <div class="column is-one-half">
+                <div class="field">
+                  <label class="checkbox">
+                    <input type="checkbox" v-model="selectedRopts.treewarp" title="warp to ember tree by pressing start+B on map screen">
+                    Tree Warp
+                  </label>
+                </div>
+                <div class="field">
+                  <label class="checkbox">
+                    <input type="checkbox" v-model="selectedRopts.dungeons" title="shuffle dungeon entrances (disabled in entrance rando)">
+                    Dungeon Shuffle
+                  </label>
+                </div>
+                <div class="field">
+                  <label class="checkbox">
+                    <input type="checkbox" v-model="selectedRopts.portals"
+                      v-bind:disabled="selectedRopts.game != 'seasons'"
+                      title="shuffle subrosia portal connections (seasons)">
+                    Portal Shuffle (Seasons)
+                  </label>
+                </div>
               </div>
-              <div class="field">
-                <label class="checkbox">
-                  <input type="checkbox" v-model="ropts.hard" title="enable more difficult logic">
-                  Hard Logic
-                </label>
-              </div>
-              <div class="field">
-                <label class="checkbox">
-                  <input type="checkbox" v-model="ropts.keysanity"
-                    v-bind:disabled="branch != 'keysanity'"
-                    title="shuffle dungeon keys, maps, and compasses outside their dungeons">
-                  Keysanity
-                </label>
-              </div>
-              <div class="field">
-                <label class="checkbox">
-                  <input type="checkbox" v-model="ropts.entrances"
-                    v-bind:disabled="branch != 'entrance-rando'"
-                    title="shuffle all entrances">
-                  Random Entrances
-                </label>
+              <div class="column is-one-half">
+                <div class="field">
+                  <label class="checkbox">
+                    <input type="checkbox" v-model="selectedRopts.hard" title="enable more difficult logic">
+                    Hard Logic
+                  </label>
+                </div>
+                <div class="field">
+                  <label class="checkbox">
+                    <input type="checkbox" v-model="selectedRopts.keysanity"
+                      v-bind:disabled="branch != 'keysanity'"
+                      title="shuffle dungeon keys, maps, and compasses outside their dungeons">
+                    Keysanity
+                  </label>
+                </div>
+                <div class="field">
+                  <label class="checkbox">
+                    <input type="checkbox" v-model="selectedRopts.entrances"
+                      v-bind:disabled="branch != 'entrance-rando'"
+                      title="shuffle all entrances">
+                    Random Entrances
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -144,7 +187,7 @@
             </div>
           </div>
         </div>
-        <div class="block is-fullwidth" v-if="romWritten">
+        <div class="block is-fullwidth" v-if="runStatus != runStatus.READY">
           <strong v-if="workerRunStage != null" class="console-line" v-html="workerRunStage"></strong>
           <span
             class="console-line"
@@ -162,11 +205,12 @@
 
 <script>
 import { initMainThreadFilesystem, writeFile, readFile, readRootDir, clearRootDir } from '../lib/fs.js';
-import { detectGame } from '../lib/util.js';
+import { detectGame, buildMultiworldArgv, createDownload } from '../lib/util.js';
 import ageslogoImage from '../assets/ageslogo.png';
 import seasonslogoImage from '../assets/seasonslogo.png';
 import branchData from '../lib/branches.json';
 import GoWorker from '../lib/go-worker.worker.js';
+import JSZip from 'jszip';
 
 export default {
     data: () => ({
@@ -177,23 +221,36 @@ export default {
           ages: ageslogoImage,
           seasons: seasonslogoImage,
         },
-        ropts: {
-            useSeed: false,
-            seed: '',
-            race: false,
-            hard: false,
+        globalOpts: {
+          race: false,
+          useSeed: false,
+          seed: '',
+        },
+        worldRopts: [
+          {
+            game: 'none',
             treewarp: true,
+            hard: false,
             dungeons: false,
             portals: false,
             keysanity: false,
+            entrances: false,
+          },
+        ],
+        multiWorld: {
+          enabled: false,
+          count: 1,
+          useSameOptions: true,
+          selectedWorld: 0,
         },
         branchData,
         branch: 'original',
-        romWritten: false,
-        romWasInvalid: false,
-        detectedGame: null,
-        romDownload: null,
-        logDownload: null,
+        gamesAvailable: {
+          seasons: false,
+          ages: false,
+        },
+        lastRomWasInvalid: false,
+        zipDownload: null,
         RunStatus: { READY: 0, RUNNING: 1, DONE: 2 },
         runStatus: 0,
         workerRunStage: null,
@@ -210,57 +267,79 @@ export default {
         await initMainThreadFilesystem(this.goWorker);
 
         this.goWorker.postMessage({ type: 'init' });
+
+        // Write placeholders for both ROMs
+        await Promise.all([writeFile('seasons.gbc', ''), writeFile('ages.gbc', '')]);
     },
     computed: {
-      gameName() {
-        if (this.detectedGame == null) return 'Invalid ROM';
-        return this.detectedGame == 'ages' ? 'Oracle of Ages' : 'Oracle of Seasons';
+      selectedRopts() {
+        return this.worldRopts[this.multiWorld.selectedWorld];
       },
-      displayedImage() {
-        if (this.detectedGame == null) return '';
-        return this.detectedGame == 'ages' ? this.logos.ages : this.logos.seasons;
+      bothRomsWrittenToFs() {
+        return this.gamesAvailable.seasons && this.gamesAvailable.ages;
+      },
+      gamesAvailableNames() {
+        return Object.keys(this.gamesAvailable).filter(k => this.gamesAvailable[k]);
       },
       branchNames() {
         return Object.keys(this.branchData);
       },
       seedValid() {
-        return /[0-9a-f]{8}/.test(this.ropts.seed);
+        return /[0-9a-f]{8}/.test(this.globalOpts.seed);
       },
       runDisabled() {
         return (this.workerLoading
           || this.runStatus != this.RunStatus.READY
-          || !this.romWritten
-          || this.detectedGame == 'invalid'
-          || (this.ropts.useSeed && !this.seedValid));
+          || this.worldRopts.some(({ game }) => (game == 'none' || !this.gamesAvailable[game]))
+          || (this.globalOpts.useSeed && !this.seedValid));
       }
     },
     methods: {
+        gameName(game) {
+          if (game == 'seasons') return 'Oracle of Seasons';
+          if (game == 'ages') return 'Oracle of Ages';
+          return null;
+        },
         async uploadRom(method, event) {
-            this.romWasInvalid = false;
-            this.romWritten = false;
+            this.lastRomWasInvalid = false;
             this.uploadHovering = false;
-            let rom = method == 'drop' ? event.dataTransfer.files[0] : event.target.files[0];
-            let data = await rom.arrayBuffer();
-            this.detectedGame = detectGame(data);
-            if (this.detectedGame == null) {
-              this.romWasInvalid = true;
-            } else {
-              await writeFile('/rom.gbc', data);
-              this.romWritten = true;
+            let roms = method == 'drop' ? event.dataTransfer.files : event.target.files;
+            for (let rom of roms) {
+              let data = await rom.arrayBuffer();
+              let detectedGame = detectGame(data);
+              if (detectedGame == null) {
+                  this.lastRomWasInvalid = true;
+              } else {
+                  await writeFile(detectedGame == 'seasons' ? 'seasons.gbc' : 'ages.gbc', data);
+                  if (detectedGame == 'seasons') this.gamesAvailable.seasons = true;
+                  if (detectedGame == 'ages') this.gamesAvailable.ages = true;
+              }
             }
+        },
+        worldCountUpdated(event) {
+          let defaultOptions = this.worldRopts[0];
+          while (this.worldRopts.length < this.multiWorld.count) {
+            this.worldRopts.push({ ...defaultOptions });
+          }
         },
         runRandomizer() {
             this.runStatus = this.RunStatus.RUNNING;
-            let argv = [''];
-            if (this.ropts.treewarp) argv.push('-treewarp');
-            if (this.ropts.dungeons) argv.push('-dungeons');
-            if (this.ropts.portals && this.detectedGame == 'seasons') argv.push('-portals');
-            if (this.ropts.hard) argv.push('-hard');
-            if (this.ropts.keysanity) argv.push('-keysanity');
-            if (this.ropts.entrances) argv.push('-entrances');
-            if (this.ropts.useSeed) argv.push(`-seed=${ this.ropts.seed }`);
-            if (this.ropts.race) argv.push('-race');
-            argv.push('/rom.gbc');
+            let argv;
+            if (this.multiWorld.enabled) {
+                argv = buildMultiworldArgv(this.globalOpts, this.worldRopts);
+            } else {
+                let ropts = this.worldRopts[0];
+                argv = [''];
+                if (ropts.treewarp) argv.push('-treewarp');
+                if (ropts.dungeons) argv.push('-dungeons');
+                if (ropts.portals && ropts.game == 'seasons') argv.push('-portals');
+                if (ropts.hard) argv.push('-hard');
+                if (ropts.keysanity) argv.push('-keysanity');
+                if (ropts.entrances) argv.push('-entrances');
+                if (this.globalOpts.useSeed) argv.push(`-seed=${ this.globalOpts.seed }`);
+                if (this.globalOpts.race) argv.push('-race');
+                argv.push(`/${ ropts.game }.gbc`);
+            }
             this.goWorker.postMessage({ type: 'run', instance: this.branch, argv });
         },
         async handleGoWorkerMessage({ data }) {
@@ -278,24 +357,31 @@ export default {
         },
         async goWorkerFinished() {
             // We expect the randomized rom & log to be written to the filesystem
-            let files = await readRootDir();
-
-            let romName = files.find(x => x.startsWith('oo') && x.endsWith('gbc'));
-            let rom = await readFile(`/${ romName }`);
-            let romBlob = new Blob([rom.buffer]);
-            this.romDownload = { link: URL.createObjectURL(romBlob, { type: 'application/octet-stream' }), name: romName };
-            
-            if (!this.ropts.race) {
-              let logName = files.find(x => x.startsWith('oo') && x.endsWith('txt'));
-              let log = await readFile(`/${ logName }`);
-              let logBlob = new Blob([log.buffer]);
-              this.logDownload = { link: URL.createObjectURL(logBlob, { type: 'text/plain' }), name: logName };
-            } else {
-              this.logDownload = null;
+            let files = (await readRootDir()).filter(x => /^o(.+)(gbc|txt)$/.test(x));
+            let zip = new JSZip();
+            for (let f of files) {
+              let data = await readFile(`/${ f }`);
+              zip.file(f, data.buffer);
             }
+
+            let zipData = await zip.generateAsync({ type: 'uint8array' });
+            let blob = new Blob([zipData.buffer]);
+            this.zipDownload = URL.createObjectURL(blob, { type: 'application/octet-stream' });
 
             this.runStatus = this.RunStatus.DONE;
         },
+    },
+    watch: {
+      gamesAvailable: {
+        handler: function (oldVal, newVal) {
+          if (!this.multiWorld.enabled || this.multiWorld.useSameOptions) {
+            if (newVal.seasons && !newVal.ages) this.worldRopts[0].game = 'seasons';
+            if (newVal.ages && !newVal.seasons) this.worldRopts[0].game = 'ages';
+            console.log('hey');
+          }
+        },
+        deep: true,
+      },
     },
 };
 </script>
@@ -306,7 +392,7 @@ export default {
     justify-content: center;
     align-items: center;
     width: 400px;
-    height: 272px;
+    height: 150px;
     border: 2px dashed gray;
     border-radius: 10px;
     &.hover {
@@ -318,7 +404,7 @@ export default {
     }
   }
 
-  #logo-image {
+  .logo-img {
     width: 400px;
     height: 272px;
   }
