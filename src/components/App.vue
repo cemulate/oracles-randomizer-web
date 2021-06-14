@@ -2,46 +2,31 @@
 <section id="root" class="section">
   <div class="container is-fluid">
     <div class="columns is-centered">
-      <div class="column is-narrow">
-        <div class="block" v-if="!bothRomsWrittenToFs">
-          <p>Provide ROM(s) here:</p>
-          <small>Oracles of Ages or Oracle of Seasons U.S. version</small>
-        </div>
+      <div class="column is-3">
         <div class="block">
-          <div id="drop-area"
-            v-if="!bothRomsWrittenToFs"
-            @drop.prevent="uploadRom('drop', $event)"
-            @dragover.prevent="uploadHovering = true"
-            @dragleave.prevent="uploadHovering = false"
-            v-bind:class="{ 'hover': uploadHovering }">
-            <span>Drop ROM here</span>
-          </div>
-        </div>
-        <div class="block">
-          <div class="file is-boxed is-fullwidth" v-if="!bothRomsWrittenToFs">
-            <label class="file-label">
-              <input class="file-input" type="file" name="resume" @change="uploadRom('file', $event)">
-              <span class="file-cta">
-                <span class="file-label" style="text-align: center">
-                  Or choose a file ...
-                </span>
-              </span>
-            </label>
-          </div>
+          <file-drop class="is-fullwidth" text="Drop or select ROMs here" v-on:received-files="gotRoms"></file-drop>
+          <small>
+            Oracles of Ages and/or Oracle of Seasons U.S. versions only.
+            Hover over options for a brief explanation
+          </small>
         </div>
         <div class="block" v-if="lastRomWasInvalid">
-          <strong>Invalid ROM</strong> detected.
+          <strong>Invalid ROM.</strong>
         </div>
-        <div class="block" v-if="gamesAvailable.seasons">
-          <img class="logo-img" v-bind:src="logos.seasons">
-          <p><strong>✔ Oracle of Seasons Loaded</strong></p>
-        </div>
-        <div class="block" v-if="gamesAvailable.ages">
-          <img class="logo-img" v-bind:src="logos.ages">
-          <p><strong>✔ Oracle of Ages Loaded</strong></p>
+        <div class="block">
+          <div class="columns is-centered">
+            <div class="column is-one-half" v-if="gamesAvailable.seasons">
+              <img v-bind:src="logos.seasons">
+              <p><strong>✔ Oracle of Seasons</strong></p>
+            </div>
+            <div class="column is-one-half" v-if="gamesAvailable.ages">
+              <img v-bind:src="logos.ages">
+              <p><strong>✔ Oracle of Ages</strong></p>
+            </div>
+          </div>
         </div>
         <div class="block" v-if="runStatus == RunStatus.DONE">
-          <strong><a class="button is-fullwidth is-success" download="oracles-randomizer.zip" v-bind:href="zipDownload">⬇ Download ZIP file</a></strong>
+          <strong><a class="button is-fullwidth is-success" download="oracles-randomizer.zip" v-bind:href="zipDownload">⬇ Download Results</a></strong>
         </div>
       </div>
       <div class="column is-5">
@@ -83,49 +68,61 @@
               <div class="field is-grouped">
                 <div class="control is-expanded">
                   <label class="checkbox">
-                    <input type="checkbox" v-model="multiWorld.enabled">
+                    <input type="checkbox" v-model="multiWorld.enabled" v-bind:disabled="branch != 'original'"
+                      title="Generate a multi-world seed (see randomizer docs); only supported on the original branch">
                     Multiworld
                   </label>
                 </div>
                 <div class="control">
-                  <input type="number" class="input" v-model="multiWorld.count" min="1" max="99" 
+                  <input type="number" class="input" v-model="multiWorld.count" min="1" max="99"
                     v-bind:disabled="!multiWorld.enabled"
                     v-on:change="worldCountUpdated">
                 </div>
               </div>
               <div class="field">
                 <label class="checkbox">
-                  <input type="checkbox" v-bind:disabled="!multiWorld.enabled" v-model="multiWorld.useSameOptions">
+                  <input type="checkbox" v-bind:disabled="!multiWorld.enabled" v-model="multiWorld.useSameOptions"
+                    title="Use the same game and options for all worlds in the seed, or set each individually">
                   Same game/options for all worlds 
                 </label>
               </div>
+              <hr>
               <div class="field">
                 <label class="checkbox">
-                  <input type="checkbox" v-model="globalOpts.race">
+                  <input type="checkbox" v-model="globalOpts.race"
+                    title="Don't generate spoiler logs or print full seed in file select screen or filename">
                   Race mode
                 </label>
               </div>
             </div>
           </div>
-          <nav class="level" v-if="multiWorld.enabled && !multiWorld.useSameOptions">
+          <nav class="level" style="margin-bottom: 0" v-if="multiWorld.enabled && !multiWorld.useSameOptions">
             <div class="level-left">
-              <button class="button" v-on:click="multiWorld.selectedWorld -= 1" v-bind:disabled="multiWorld.selectedWorld == 0">⬅</button>
+              <button class="button is-white" v-on:click="multiWorld.selectedWorld -= 1" v-bind:disabled="multiWorld.selectedWorld == 0">⬅</button>
             </div>
             <div class="level-item">
               <strong>Settings for world <span v-html="multiWorld.selectedWorld + 1"></span></strong>
             </div>
             <div class="level-right">
-              <button class="button" v-on:click="multiWorld.selectedWorld += 1" v-bind:disabled="multiWorld.selectedWorld == multiWorld.count - 1">➡</button>
+              <button class="button is-white" v-on:click="multiWorld.selectedWorld += 1" v-bind:disabled="multiWorld.selectedWorld == multiWorld.count - 1">➡</button>
             </div>
           </nav>
           <div class="box">
-            <div class="field">
-              <div class="select">
-                <select v-model="selectedRopts.game">
-                  <option value="none">Select game ...</option>
-                  <option v-for="name in gamesAvailableNames" v-bind:key="name" v-bind:value="name" v-html="gameName(name)"></option>
-                </select>
-              </div>
+            <div class="field has-addons">
+              <p class="control" v-if="gamesAvailable.seasons">
+                <button class="button is-rounded"
+                  v-bind:class="{ 'is-primary': selectedRopts.game == 'seasons' }"
+                  v-on:click="updateGame(selectedRopts, 'seasons')">
+                  Oracle of Seasons
+                </button>
+              </p>
+              <p class="control" v-if="gamesAvailable.ages">
+                <button class="button is-rounded"
+                  v-bind:class="{ 'is-primary': selectedRopts.game == 'ages' }"
+                  v-on:click="updateGame(selectedRopts, 'ages')">
+                  Oracle of Ages
+                </button>
+              </p>
             </div>
             <div class="columns">
               <div class="column is-one-half">
@@ -182,7 +179,7 @@
                 v-bind:disabled="runDisabled"
                 v-bind:class="{ 'is-loading': workerLoading || runStatus == RunStatus.RUNNING }"
                 @click.prevent="runRandomizer">
-                Randomize
+                {{ runStatus == RunStatus.DONE ? 'Finished!' : 'Randomize' }}
               </button>
             </div>
           </div>
@@ -205,18 +202,19 @@
 
 <script>
 import { initMainThreadFilesystem, writeFile, readFile, readRootDir, clearRootDir } from '../lib/fs.js';
-import { detectGame, buildMultiworldArgv, createDownload } from '../lib/util.js';
+import { detectGame, buildMultiworldArgv, createDownload, buildNormalArgv } from '../lib/util.js';
 import ageslogoImage from '../assets/ageslogo.png';
 import seasonslogoImage from '../assets/seasonslogo.png';
 import branchData from '../lib/branches.json';
 import GoWorker from '../lib/go-worker.worker.js';
 import JSZip from 'jszip';
 
+import FileDrop from './FileDrop.vue';
+
 export default {
     data: () => ({
         workerLoading: true,
         goWorker: null,
-        uploadHovering: false,
         logos: {
             ages: ageslogoImage,
             seasons: seasonslogoImage,
@@ -273,7 +271,8 @@ export default {
     },
     computed: {
         selectedRopts() {
-            return this.worldRopts[this.multiWorld.selectedWorld];
+            let index = this.multiWorld.enabled ? this.multiWorld.selectedWorld : 0;
+            return this.worldRopts[index];
         },
         bothRomsWrittenToFs() {
             return this.gamesAvailable.seasons && this.gamesAvailable.ages;
@@ -300,10 +299,9 @@ export default {
             if (game == 'ages') return 'Oracle of Ages';
             return null;
         },
-        async uploadRom(method, event) {
+        async gotRoms(roms) {
             this.lastRomWasInvalid = false;
-            this.uploadHovering = false;
-            let roms = method == 'drop' ? event.dataTransfer.files : event.target.files;
+            let found = { seasons: false, ages: false };
             for (let rom of roms) {
                 let data = await rom.arrayBuffer();
                 let detectedGame = detectGame(data);
@@ -311,9 +309,12 @@ export default {
                     this.lastRomWasInvalid = true;
                 } else {
                     await writeFile(detectedGame == 'seasons' ? 'seasons.gbc' : 'ages.gbc', data);
-                    if (detectedGame == 'seasons') this.gamesAvailable.seasons = true;
-                    if (detectedGame == 'ages') this.gamesAvailable.ages = true;
+                    if (detectedGame == 'seasons') found.seasons = true;
+                    if (detectedGame == 'ages') found.ages = true;
                 }
+            }
+            for (let k of ['seasons', 'ages']) {
+                if (found[k]) this.gamesAvailable[k] = true;
             }
         },
         worldCountUpdated(event) {
@@ -322,24 +323,16 @@ export default {
                 this.worldRopts.push({ ...defaultOptions });
             }
         },
+        updateGame(ropts, game) {
+            // Just to check/disable portals if the game is changed to ages
+            ropts.game = game;
+            if (game == 'ages') ropts.portals = false;
+        },
         runRandomizer() {
             this.runStatus = this.RunStatus.RUNNING;
-            let argv;
-            if (this.multiWorld.enabled) {
-                argv = buildMultiworldArgv(this.globalOpts, this.worldRopts);
-            } else {
-                let ropts = this.worldRopts[0];
-                argv = [''];
-                if (ropts.treewarp) argv.push('-treewarp');
-                if (ropts.dungeons) argv.push('-dungeons');
-                if (ropts.portals && ropts.game == 'seasons') argv.push('-portals');
-                if (ropts.hard) argv.push('-hard');
-                if (ropts.keysanity) argv.push('-keysanity');
-                if (ropts.entrances) argv.push('-entrances');
-                if (this.globalOpts.useSeed) argv.push(`-seed=${ this.globalOpts.seed }`);
-                if (this.globalOpts.race) argv.push('-race');
-                argv.push(`/${ ropts.game }.gbc`);
-            }
+            let argv = this.multiWorld.enabled
+                ? buildMultiworldArgv(this.globalOpts, this.worldRopts)
+                : buildNormalArgv(this.globalOpts, this.worldRopts[0]);
             this.goWorker.postMessage({ type: 'run', instance: this.branch, argv });
         },
         async handleGoWorkerMessage({ data }) {
@@ -373,15 +366,24 @@ export default {
     },
     watch: {
         gamesAvailable: {
-            handler: function (oldVal, newVal) {
-            if (!this.multiWorld.enabled || this.multiWorld.useSameOptions) {
-                if (newVal.seasons && !newVal.ages) this.worldRopts[0].game = 'seasons';
-                if (newVal.ages && !newVal.seasons) this.worldRopts[0].game = 'ages';
-                console.log('hey');
-            }
+            handler: function (newVal) {
+                if (!this.multiWorld.enabled || this.multiWorld.useSameOptions) {
+                    if (newVal.seasons && !newVal.ages) this.worldRopts[0].game = 'seasons';
+                    if (newVal.ages && !newVal.seasons) this.worldRopts[0].game = 'ages';
+                }
             },
             deep: true,
         },
+        branch: function(newVal) {
+            if (newVal != 'original') this.multiWorld.enabled = false;
+            for (let ropts of this.worldRopts) {
+                if (newVal != 'keysanity') ropts.keysanity = false;
+                if (newVal != 'entrance-rando') ropts.entrances = false;
+            }
+        },
+    },
+    components: {
+        'file-drop': FileDrop,
     },
 };
 </script>
@@ -405,8 +407,7 @@ export default {
   }
 
   .logo-img {
-    width: 400px;
-    height: 272px;
+    width: 200px;
   }
 
   .console-line {

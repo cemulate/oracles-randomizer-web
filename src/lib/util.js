@@ -40,6 +40,20 @@ export function buildMultiworldArgv(globalOpts, worldRopts) {
     return argv;
 }
 
+export function buildNormalArgv(globalOpts, ropts) {
+    let argv = [''];
+    if (ropts.treewarp) argv.push('-treewarp');
+    if (ropts.dungeons) argv.push('-dungeons');
+    if (ropts.portals && ropts.game == 'seasons') argv.push('-portals');
+    if (ropts.hard) argv.push('-hard');
+    if (ropts.keysanity) argv.push('-keysanity');
+    if (ropts.entrances) argv.push('-entrances');
+    if (globalOpts.useSeed) argv.push(`-seed=${ globalOpts.seed }`);
+    if (globalOpts.race) argv.push('-race');
+    argv.push(`/${ ropts.game }.gbc`);
+    return argv;
+}
+
 export async function createDownload(fileName, fileType, player=null) {
     let data = await readFile(`/${ fileName }`);
     let blob = new Blob([data.buffer]);
