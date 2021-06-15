@@ -173,15 +173,20 @@
               </div>
             </div>
           </div>
-          <div class="columns">
-            <div class="column">
+          <div class="field is-grouped">
+            <p class="control is-expanded">
               <button class="button is-fullwidth is-link is-large"
                 v-bind:disabled="runDisabled"
                 v-bind:class="{ 'is-loading': workerLoading || runStatus == RunStatus.RUNNING }"
                 @click.prevent="runRandomizer">
                 {{ runStatus == RunStatus.DONE ? 'Finished!' : 'Randomize' }}
               </button>
-            </div>
+            </p>
+            <p class="control" v-if="runStatus == RunStatus.DONE">
+              <button class="button is-large is-success" v-on:click="reset">
+                ⭯ Reset
+              </button>
+            </p>
           </div>
         </div>
         <div class="block is-fullwidth" v-if="runStatus != runStatus.READY">
@@ -201,8 +206,8 @@
 </template>
 
 <script>
-import { initMainThreadFilesystem, writeFile, readFile, readRootDir, clearRootDir } from '../lib/fs.js';
-import { detectGame, buildMultiworldArgv, createDownload, buildNormalArgv } from '../lib/util.js';
+import { initMainThreadFilesystem, writeFile, readFile, readRootDir, removeFilesExcept } from '../lib/fs.js';
+import { detectGame, buildMultiworldArgv, buildNormalArgv } from '../lib/util.js';
 import ageslogoImage from '../assets/ageslogo.png';
 import seasonslogoImage from '../assets/seasonslogo.png';
 import branchData from '../lib/branches.json';
@@ -363,6 +368,14 @@ export default {
 
             this.runStatus = this.RunStatus.DONE;
         },
+        async reset() {
+            console.log('hey');
+            await removeFilesExcept(/^(seasons\.gbc|ages\.gbc)$/);
+            this.zipDownload = null;
+            this.runStatus = this.RunStatus.READY;
+            this.workerRunStage = null;
+            this.consoleLines = [];
+        }
     },
     watch: {
         gamesAvailable: {

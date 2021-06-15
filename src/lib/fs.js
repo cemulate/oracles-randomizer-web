@@ -47,20 +47,15 @@ export function readRootDir() {
     });
 };
 
-export function clearRootDir() {
-    return new Promise(async (resolve, reject) => {
-        try {
-            let files = await readRootDir();
-            await Promise.all(files.map(f => {
-                return new Promise((resolve, reject) => {
-                    BFSfs.rm(`/${ f }`, (e) => {
-                        return (e != null) ? reject(e) : resolve();
-                    });
-                });
-            }));
-        } catch (e) {
-            reject(e);
-        }
-    });
+export async function removeFilesExcept(whitelist) {
+    let files = await readRootDir();
+    return Promise.all(files.map(f => {
+        if (whitelist.test(f)) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+            BFSfs.unlink(`/${ f }`, (e) => {
+                return (e != null) ? reject(e) : resolve();
+            });
+        });
+    }));
 };
 

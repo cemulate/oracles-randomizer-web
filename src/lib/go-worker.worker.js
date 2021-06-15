@@ -14,6 +14,7 @@ self.onmessage = async ({ data }) => {
 
         self.goRunner = new self.Go();
         
+        self.wasmModules = {};
         self.wasmInstances = {};
 
         self.postMessage({ type: 'init', done: true });
@@ -21,6 +22,7 @@ self.onmessage = async ({ data }) => {
         if (!(data.instance in self.wasmInstances)) {
             self.postMessage({ type: 'run', stage: 'Downloading randomizer ...' });
             let result = await WebAssembly.instantiateStreaming(fetch(`wasm/${ data.instance }.wasm`), self.goRunner.importObject);
+            self.wasmModules[data.instance] = result.module;
             self.wasmInstances[data.instance] = result.instance;
         }
 
@@ -32,6 +34,9 @@ self.onmessage = async ({ data }) => {
         } catch (e) {
             console.error(e);
         }
+
+        self.goRunner = new self.Go();
+        self.wasmInstances[data.instance] = await WebAssembly.instantiate(self.wasmModules[data.instance], self.goRunner.importObject);
         
         self.postMessage({ type: 'run', done: true });
     }
