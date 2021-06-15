@@ -54,13 +54,3 @@ export function buildNormalArgv(globalOpts, ropts) {
     return argv;
 }
 
-export async function createDownload(fileName, fileType, player=null) {
-    let data = await readFile(`/${ fileName }`);
-    let blob = new Blob([data.buffer]);
-    return {
-        link: URL.createObjectURL(blob, { type: fileType == 'gbc' ? 'application/octet-stream' : 'text/plain' }),
-        name: fileName,
-        type: fileType,
-        ...(player != null ? { player } : {}),
-    };
-}

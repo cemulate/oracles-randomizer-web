@@ -98,13 +98,13 @@
           </div>
           <nav class="level" style="margin-bottom: 0" v-if="multiWorld.enabled && !multiWorld.useSameOptions">
             <div class="level-left">
-              <button class="button is-white" v-on:click="multiWorld.selectedWorld -= 1" v-bind:disabled="multiWorld.selectedWorld == 0">⬅</button>
+              <button class="button is-white" v-on:click="multiWorld.selectedWorld -= 1" v-bind:disabled="multiWorld.selectedWorld == 0">🡄</button>
             </div>
             <div class="level-item">
               <strong>Settings for world <span v-html="multiWorld.selectedWorld + 1"></span></strong>
             </div>
             <div class="level-right">
-              <button class="button is-white" v-on:click="multiWorld.selectedWorld += 1" v-bind:disabled="multiWorld.selectedWorld == multiWorld.count - 1">➡</button>
+              <button class="button is-white" v-on:click="multiWorld.selectedWorld += 1" v-bind:disabled="multiWorld.selectedWorld == multiWorld.count - 1">🡆</button>
             </div>
           </nav>
           <div class="box">
