@@ -1,27 +1,32 @@
 <template>
-<section id="root" class="section">
-  <div class="container is-fluid">
+<div id="root" class="container is-fluid">
+  <div class="section">
     <div class="columns is-centered">
-      <div class="column is-3">
+      <div class="column is-4-tablet is-4-desktop is-3-widescreen is-3-fullhd">
         <div class="block">
-          <file-drop class="is-fullwidth" text="Drop or select ROMs here" v-on:received-files="gotRoms"></file-drop>
+          <file-drop class="is-fullwidth" text="ROMs ..." v-on:received-files="gotRoms"></file-drop>
           <small>
-            Oracles of Ages and/or Oracle of Seasons U.S. versions only.
-            Hover over options for a brief explanation
+            Drop or select Oracles of Ages and/or Oracle of Seasons U.S. versions only.
           </small>
         </div>
         <div class="block" v-if="lastRomWasInvalid">
           <strong>Invalid ROM.</strong>
         </div>
         <div class="block">
-          <div class="columns is-centered">
-            <div class="column is-one-half" v-if="gamesAvailable.seasons">
-              <img v-bind:src="logos.seasons">
-              <p><strong>✔ Oracle of Seasons</strong></p>
+          <div class="columns is-mobile is-multiline is-centered">
+            <div class="column is-half-mobile is-full-tablet"
+              v-if="gamesAvailable.seasons"
+              v-bind:class="{ 'is-half-desktop': bothRomsWrittenToFs, 'is-full-desktop': !bothRomsWrittenToFs }">
+              <figure class="image is-3by2">
+                <img v-bind:src="logos.seasons">
+              </figure>
             </div>
-            <div class="column is-one-half" v-if="gamesAvailable.ages">
-              <img v-bind:src="logos.ages">
-              <p><strong>✔ Oracle of Ages</strong></p>
+            <div class="column is-half-mobile is-full-tablet"
+              v-if="gamesAvailable.ages"
+              v-bind:class="{ 'is-half-desktop': bothRomsWrittenToFs, 'is-full-desktop': !bothRomsWrittenToFs }">
+              <figure class="image is-3by2">
+                <img v-bind:src="logos.ages">
+              </figure>
             </div>
           </div>
         </div>
@@ -29,7 +34,7 @@
           <strong><a class="button is-fullwidth is-success" download="oracles-randomizer.zip" v-bind:href="zipDownload">⬇ Download Results</a></strong>
         </div>
       </div>
-      <div class="column is-5">
+      <div class="column is-half-widescreen">
         <div class="block">
           <div class="columns">
             <div class="column is-one-half">
@@ -37,19 +42,22 @@
                 <label class="label">Randomizer Version</label>
                 <div class="select is-fullwidth">
                   <select v-model="branch">
-                    <option v-for="branchName in branchNames" v-bind:key="branchName" v-html="branchName"></option>
+                    <option v-for="branchName in branchNames" v-bind:key="branchName">{{ branchName }}</option>
                   </select>
                 </div>
               </div>
-              <div class="columns">
-                <div class="column is-narrow">
-                  <em>Version: &nbsp;</em><span class="tag is-info" v-html="branchData[branch].tag"></span>
+              <nav class="level is-mobile">
+                <div class="level-left">
+                  <div class="level-item">
+                    <span class="tag is-info">{{ '▶' }} &nbsp; {{ branchData[branch].tag }}</span>
+                  </div>
                 </div>
-                <div class="column"></div>
-                <div class="column is-narrow">
-                  <a target="_blank" v-bind:href="branchData[branch].url">Release Page</a>
+                <div class="level-right">
+                  <div class="level-right">
+                    <a target="_blank" v-bind:href="branchData[branch].url">↗ Release Page</a>
+                  </div>
                 </div>
-              </div>
+              </nav>
               <label class="checkbox">
                 <input type="checkbox" v-model="globalOpts.useSeed">
                 Use custom seed <small>(8-digit hex)</small>
@@ -83,7 +91,7 @@
                 <label class="checkbox">
                   <input type="checkbox" v-bind:disabled="!multiWorld.enabled" v-model="multiWorld.useSameOptions"
                     title="Use the same game and options for all worlds in the seed, or set each individually">
-                  Same game/options for all worlds 
+                  Same game/options for all worlds
                 </label>
               </div>
               <hr>
@@ -108,21 +116,15 @@
             </div>
           </nav>
           <div class="box">
-            <div class="field has-addons">
-              <p class="control" v-if="gamesAvailable.seasons">
-                <button class="button is-rounded"
-                  v-bind:class="{ 'is-primary': selectedRopts.game == 'seasons' }"
-                  v-on:click="updateGame(selectedRopts, 'seasons')">
-                  Oracle of Seasons
-                </button>
-              </p>
-              <p class="control" v-if="gamesAvailable.ages">
-                <button class="button is-rounded"
-                  v-bind:class="{ 'is-primary': selectedRopts.game == 'ages' }"
-                  v-on:click="updateGame(selectedRopts, 'ages')">
-                  Oracle of Ages
-                </button>
-              </p>
+            <div class="tabs" v-if="gamesAvailable.seasons || gamesAvailable.ages">
+              <ul>
+                <li v-bind:class="{ 'is-active': selectedRopts.game == 'seasons' }" v-if="gamesAvailable.seasons">
+                  <a v-on:click="updateGame(selectedRopts, 'seasons')">Oracle of Seasons</a>
+                </li>
+                <li v-bind:class="{ 'is-active': selectedRopts.game == 'ages' }" v-if="gamesAvailable.ages">
+                  <a v-on:click="updateGame(selectedRopts, 'ages')">Oracle of Ages</a>
+                </li>
+              </ul>
             </div>
             <div class="columns">
               <div class="column is-one-half">
@@ -202,7 +204,7 @@
       </div>
     </div>
   </div>
-</section>
+</div>
 </template>
 
 <script>
@@ -296,7 +298,7 @@ export default {
             || this.runStatus != this.RunStatus.READY
             || this.worldRopts.some(({ game }) => (game == 'none' || !this.gamesAvailable[game]))
             || (this.globalOpts.useSeed && !this.seedValid));
-        }
+        },
     },
     methods: {
         gameName(game) {
