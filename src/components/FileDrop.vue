@@ -5,10 +5,10 @@
   @dragleave.prevent="hovering = false"
   v-bind:class="{ 'is-warning': hovering }">
   <label class="file-label">
-    <input class="file-input" type="file" @change="handleFiles('file', $event)">
+    <input class="file-input" type="file" multiple @change="handleFiles('file', $event)">
     <span class="file-cta">
       <span class="file-icon">⬆</span>
-      <span class="file-label" style="text-align: center" v-html="text"></span>
+      <span class="file-label" style="text-align: center">{{ text }}</span>
     </span>
   </label>
 </div>
