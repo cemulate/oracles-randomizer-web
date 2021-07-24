@@ -12,12 +12,12 @@ Logos will be displayed for each game uploaded.
 * Select the randomizer version.
 There are two forks of jangler's original randomizer that support additional features:
     * The **original** randomizer is jangler's original randomizer mentioned above.
-    * The **keysanity** version is a fork by [Drenn1](https://github.com/Drenn1), that supports shuffling keys, maps, and compasses are shuffled outside their dungeons. 
+    * The **keysanity** version is a fork by [Drenn1](https://github.com/Drenn1), that supports shuffling keys, maps, and compasses outside their dungeons. 
     When using this version of the randomizer, you still must **check the keysanity option** when randomizing to enable it.
-    * The **entrance-rando** version is a fork by [vinheim3](https://github.com/vinheim3) that supports shuffling all entrances in teh game. 
+    * The **entrance-rando** version is a fork by [vinheim3](https://github.com/vinheim3) that supports shuffling all entrances in the game. 
     When using this version of the randomizer, you must still **check the Random Entrances option** when randomizing to enable it.
     * Please note that the randomizers are not necessarily up to date with one another, and that the original version is the most stable.
-* If randomizing a single game/ROM, you may simply check the appropriate options and click "Randmoize".
+* If randomizing a single game/ROM, you may simply check the appropriate options and click "Randomize".
 The results, a ZIP file including the ROM and the spoiler log, will appear on the left (top of the page on mobile).
 * For multiworld seeds (only available on the original randomizer), enable the **Multiworld** option and select the number of ROMs to randomize.
 The randomization settings in the box below will be applied to all world(s) by default.
@@ -33,7 +33,7 @@ ROMs generated with the same option and the same seed will be identical.
 The randomizer program(s) themselves are actually written in Go.
 This web interface works by running a WebAssembly build of the actual randomizer(s) entirely client-side in your browser.
 This means
-* A **slow network connection** may be prohibitive to run this app, as binaries of the randomizers have to be downloaded over the network
+* A **slow network connection** may be prohibitive to run this app, as binaries of the randomizers have to be downloaded over the network, which are about 2MB+ gzipped (they are cached afterward).
 * Running the app on a **mobile device** could be slow, as the it uses the processing power of the device itself entirely in the browser (no server is involved).
 
 ## Technical details 
