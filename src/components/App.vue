@@ -3,6 +3,18 @@
   <div class="section">
     <div class="columns is-centered">
       <div class="column is-4-tablet is-4-desktop is-3-widescreen is-3-fullhd">
+        <div class="block" v-if="showInstructions">
+          <div class="message is-warning">
+            <div class="message-header">
+              <p>Instructions</p>
+              <button class="delete" v-on:click="dismissInstructions"></button>
+            </div>
+            <div class="message-body">
+              If you are new to the randomizer or to the web interface, please
+              <a target="_blank" href="https://github.com/cemulate/oracles-randomizer-web#web-oracles-randomizer">read the instructions</a>.
+            </div>
+          </div>
+        </div>
         <div class="block">
           <file-drop class="is-fullwidth" text="ROMs ..." v-on:received-files="gotRoms"></file-drop>
           <small>
@@ -221,6 +233,7 @@ import FileDrop from './FileDrop.vue';
 
 export default {
     data: () => ({
+        showInstructions: !window.localStorage.getItem('noInstructions'),
         workerLoading: true,
         goWorker: null,
         logos: {
@@ -302,6 +315,10 @@ export default {
         },
     },
     methods: {
+        dismissInstructions() {
+            window.localStorage.setItem('noInstructions', true);
+            this.showInstructions = false;
+        },
         gameName(game) {
             if (game == 'seasons') return 'Oracle of Seasons';
             if (game == 'ages') return 'Oracle of Ages';
