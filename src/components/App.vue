@@ -16,11 +16,7 @@
           </div>
         </div>
         <div class="block">
-          <file-drop class="is-fullwidth" text="ROMs ..." v-on:received-files="gotRoms"></file-drop>
-          <small>
-            Drop or select Oracles of Ages and/or Oracle of Seasons U.S. versions only.
-            <a href="https://github.com/cemulate/oracles-randomizer-web">Read more about the randomizer and this web interface here.</a>
-          </small>
+          <file-drop class="is-fullwidth" text="Drop/Select ROMs ..." v-on:received-files="gotRoms"></file-drop>
         </div>
         <div class="block" v-if="lastRomWasInvalid">
           <strong>Invalid ROM.</strong>
