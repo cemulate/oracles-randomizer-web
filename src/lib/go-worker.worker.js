@@ -20,7 +20,7 @@ self.onmessage = async ({ data }) => {
         self.postMessage({ type: 'init', done: true });
     } else if (data.type == 'run') {
         if (!(data.instance in self.wasmInstances)) {
-            self.postMessage({ type: 'run', stage: 'Downloading randomizer ...' });
+            self.postMessage({ type: 'run', stage: `Fetching ${ data.instance } randomizer ...` });
             let result = await WebAssembly.instantiateStreaming(fetch(`wasm/${ data.instance }.wasm`), self.goRunner.importObject);
             self.wasmModules[data.instance] = result.module;
             self.wasmInstances[data.instance] = result.instance;
