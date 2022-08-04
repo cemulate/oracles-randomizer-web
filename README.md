@@ -4,6 +4,7 @@
 
 This is a web interface for running the [oracles-randomizer](https://github.com/jangler/oracles-randomizer) program by [jangler](https://github.com/jangler).
 If you are looking for documentation for the main features of the randomizer itself, plase read the [documentation in that repository](https://github.com/jangler/oracles-randomizer#readme).
+This is an entirely client-side web application that runs a WebAssembly build of the original randomizer program (see [Technical details](#technical-details) for more).
 
 ## How to use the web interface
 
