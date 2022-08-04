@@ -136,7 +136,7 @@
               </ul>
             </div>
             <div class="columns">
-              <div class="column is-one-half">
+              <div class="column is-4">
                 <div class="field">
                   <label class="checkbox">
                     <input type="checkbox" v-model="selectedRopts.treewarp" title="warp to ember tree by pressing start+B on map screen">
@@ -158,7 +158,7 @@
                   </label>
                 </div>
               </div>
-              <div class="column is-one-half">
+              <div class="column is-4">
                 <div class="field">
                   <label class="checkbox">
                     <input type="checkbox" v-model="selectedRopts.hard" title="enable more difficult logic">
@@ -180,6 +180,38 @@
                       title="shuffle all entrances">
                     Random Entrances
                   </label>
+                </div>
+              </div>
+              <div class="column is-4">
+                <div class="field is-horizontal">
+                  <div class="field-label is-normal has-text-left">
+                    <label class="label">Sprite</label>
+                  </div>
+                  <div class="field-body is-flex-grow-4">
+                    <div class="field">
+                      <div class="select is-fullwidth">
+                        <select v-model="selectedRopts.spriteCharacter">
+                          <option value="">(No change)</option>
+                          <option v-for="character in spriteData.characters" v-bind:key="character">{{ character }}</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="field is-horizontal">
+                  <div class="field-label is-normal has-text-left">
+                    <label class="label">Color</label>
+                  </div>
+                  <div class="field-body is-flex-grow-4">
+                    <div class="field">
+                      <div class="select is-fullwidth">
+                        <select v-model="selectedRopts.spriteColor" :disabled="selectedRopts.spriteCharacter.length == 0">
+                          <option value="">(No change)</option>
+                          <option v-for="color in this.spriteData.colors" v-bind:key="color">{{ color }}</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -218,10 +250,11 @@
 
 <script>
 import { initMainThreadFilesystem, writeFile, readFile, readRootDir, removeFilesExcept } from '../lib/fs.js';
-import { detectGame, buildMultiworldArgv, buildNormalArgv } from '../lib/util.js';
+import { detectGame, buildMultiworldArgv, buildNormalArgv, fetchAndApplySpritePatch } from '../lib/util.js';
 import ageslogoImage from '../assets/ageslogo.png';
 import seasonslogoImage from '../assets/seasonslogo.png';
 import branchData from '../lib/branches.json';
+import spriteData from '../lib/sprites.json';
 import GoWorker from '../lib/go-worker.worker.js';
 import JSZip from 'jszip';
 
@@ -250,6 +283,8 @@ export default {
                 portals: false,
                 keysanity: false,
                 entrances: false,
+                spriteCharacter: '',
+                spriteColor: '',
             },
         ],
         multiWorld: {
@@ -259,6 +294,7 @@ export default {
             selectedWorld: 0,
         },
         branchData,
+        spriteData,
         branch: 'original',
         gamesAvailable: {
             seasons: false,
@@ -307,6 +343,7 @@ export default {
             return (this.workerLoading
             || this.runStatus != this.RunStatus.READY
             || this.worldRopts.some(({ game }) => (game == 'none' || !this.gamesAvailable[game]))
+            || this.worldRopts.some(({ spriteCharacter, spriteColor }) => spriteCharacter.length > 0 && spriteColor.length == 0)
             || (this.globalOpts.useSeed && !this.seedValid));
         },
     },
@@ -369,13 +406,53 @@ export default {
                 this.goWorkerFinished();
             }
         },
+        parseOutputRomFilename(filename) {
+            let shortGame = filename.slice(0, 3);
+            if (this.multiWorld.enabled) {
+                let match = /p([0-9]+)\.gbc/.exec(filename);
+                if (match != null) {
+                    let worldNumber = parseInt(match[1]) - 1;
+                    return { shortGame, worldNumber };
+                }
+            } else {
+                return { shortGame, worldNumber: null };
+            }
+        },
+        async patchSpriteOnOutputRom(buffer, shortGame, spriteCharacter, spriteColor, worldNumber) {
+            if (spriteCharacter.length == 0 || spriteColor.length == 0) return null;
+            if (spriteCharacter == 'Link' && spriteColor == 'Green') {
+                let content = 'Warning: Not patching rom with sprite: Link (Green) -- Link is already green';
+                this.consoleLines.push({ type: 'stderr', content });
+                return null;
+            }
+            
+            let worldIdentifier = worldNumber != null ? `world ${ worldNumber }` : 'rom';
+            let content = `Patching ${ worldIdentifier } with sprite ${ spriteCharacter } (${ spriteColor })`;
+            this.consoleLines.push({ type: 'stdout', content });
+            try {
+                return fetchAndApplySpritePatch(buffer, shortGame, spriteCharacter, spriteColor);
+            } catch (err) {
+                let content = 'Something wen\'t wrong patching sprite; using unpatched rom';
+                this.consoleLines.push({ type: 'stderr', content });
+                return null;
+            }
+        },
         async goWorkerFinished() {
-            // We expect the randomized rom & log to be written to the filesystem
+            // We expect the randomized rom(s) & log(s) to be written to the filesystem
             let files = (await readRootDir()).filter(x => /^o(.+)(gbc|txt)$/.test(x));
             let zip = new JSZip();
             for (let f of files) {
                 let data = await readFile(`/${ f }`);
-                zip.file(f, data.buffer);
+                data = data.buffer;
+
+                if (f.endsWith('.gbc')) {
+                    let { shortGame, worldNumber } = this.parseOutputRomFilename(f);
+                    let { spriteCharacter, spriteColor } = this.multiWorld.enabled ? this.worldRopts[worldNumber] : this.worldRopts[0];
+                    let newBuf = await this.patchSpriteOnOutputRom(data, shortGame, spriteCharacter, spriteColor, worldNumber);
+                    if (newBuf != null) data = newBuf;
+                }
+
+                zip.file(f, data);
             }
 
             let zipData = await zip.generateAsync({ type: 'uint8array' });

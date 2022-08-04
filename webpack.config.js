@@ -48,6 +48,7 @@ module.exports = {
         { from: 'src/assets/favicon.png', to: 'favicon.png' },
         { from: 'src/wasm_exec.js', to: 'wasm_exec.js' },
         { from: 'src/wasm', to: 'wasm' },
+        { from: 'src/sprite-ips', to: 'sprite-ips' },
       ],
     }),
     new HtmlWebpackPlugin({
