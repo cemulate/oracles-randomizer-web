@@ -337,7 +337,7 @@ export default {
             return Object.keys(this.branchData);
         },
         seedValid() {
-            return /[0-9a-f]{8}/.test(this.globalOpts.seed);
+            return /[0-9a-fA-F]{8}/.test(this.globalOpts.seed);
         },
         runDisabled() {
             return (this.workerLoading
