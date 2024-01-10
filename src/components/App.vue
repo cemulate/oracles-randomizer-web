@@ -3,17 +3,23 @@
   <div class="section">
     <div class="columns is-centered">
       <div class="column is-4-tablet is-4-desktop is-3-widescreen is-3-fullhd">
-        <div class="block" v-if="showInstructions">
-          <div class="message is-warning">
-            <div class="message-header">
-              <p>Instructions</p>
-              <button class="delete" v-on:click="dismissInstructions"></button>
+        <div class="block">
+          <details class="info-details" :open="instructionsOpen">
+            <summary v-on:click.prevent="instructionsOpen = !instructionsOpen">Information and instructions</summary>
+            <div class="content">
+              <p style="margin-top: 0.4em">
+                This is a browser port of the <a href="https://github.com/jangler/oracles-randomizer#zelda-oracles-randomizer">original Oracles randomizer</a> by <a href="https://github.com/jangler">jangler</a>.
+                Instructions for this interface and the original randomizer can be found <a href="https://github.com/cemulate/oracles-randomizer-web#web-oracles-randomizer">in the README</a>.
+              </p>
+              <p>
+                You may instead want to use the <strong><a href="https://oosarando2.zeldahacking.net/">next-gen randomizer</a></strong> by <a href="https://github.com/Stewmath">Stewmath</a> which currently maintained and offers features like <strong>keysanity</strong> and <strong>cross-items</strong> (Ages-exclusive items in Seasons and vice versa), as well as other QOL features.
+              </p>
+              <p>
+                You may want to use this version of the randomizer if you want to do a multiworld (only possible on the original randomizer),
+                or you want to use <a href="https://github.com/vinheim3/oracles-randomizer">vinheim3's entrance-rando</a> fork.
+              </p>
             </div>
-            <div class="message-body">
-              If you are new to the randomizer or to the web interface, please
-              <a target="_blank" href="https://github.com/cemulate/oracles-randomizer-web#web-oracles-randomizer">read the instructions</a>.
-            </div>
-          </div>
+          </details>
         </div>
         <div class="block">
           <file-drop class="is-fullwidth" text="Drop/Select ROMs ..." v-on:received-files="gotRoms"></file-drop>
@@ -167,14 +173,6 @@
                 </div>
                 <div class="field">
                   <label class="checkbox">
-                    <input type="checkbox" v-model="selectedRopts.keysanity"
-                      v-bind:disabled="branch != 'keysanity'"
-                      title="shuffle dungeon keys, maps, and compasses outside their dungeons">
-                    Keysanity
-                  </label>
-                </div>
-                <div class="field">
-                  <label class="checkbox">
                     <input type="checkbox" v-model="selectedRopts.entrances"
                       v-bind:disabled="branch != 'entrance-rando'"
                       title="shuffle all entrances">
@@ -262,7 +260,7 @@ import FileDrop from './FileDrop.vue';
 
 export default {
     data: () => ({
-        showInstructions: !window.localStorage.getItem('noInstructions'),
+        instructionsOpen: JSON.parse(window.localStorage.getItem('instructionsOpen') || 'true'),
         workerLoading: true,
         goWorker: null,
         logos: {
@@ -348,10 +346,6 @@ export default {
         },
     },
     methods: {
-        dismissInstructions() {
-            window.localStorage.setItem('noInstructions', true);
-            this.showInstructions = false;
-        },
         gameName(game) {
             if (game == 'seasons') return 'Oracle of Seasons';
             if (game == 'ages') return 'Oracle of Ages';
@@ -487,6 +481,10 @@ export default {
                 if (newVal != 'entrance-rando') ropts.entrances = false;
             }
         },
+        instructionsOpen: function (newVal) {
+            console.log('instructionsOpen', newVal);
+            window.localStorage.setItem('instructionsOpen', newVal);
+        }
     },
     components: {
         'file-drop': FileDrop,
@@ -530,5 +528,20 @@ export default {
 
   .seed-input {
     font-family: monospace;
+  }
+
+  .info-details {
+    width: 100%;
+    border: 1px solid lightgray;
+    padding: 0.5em 1em 0.5em 1em;
+    // background-color: cornsilk;
+    border-radius: 0.2em;
+    summary {
+      font-weight: bold;
+      &:hover {
+        color: hsl(229deg, 53%, 53%);
+        cursor: pointer;
+      }
+    }
   }
 </style>
