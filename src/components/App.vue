@@ -12,7 +12,7 @@
                 Instructions for this interface and the original randomizer can be found <a href="https://github.com/cemulate/oracles-randomizer-web#web-oracles-randomizer">in the README</a>.
               </p>
               <p>
-                You may instead want to use the <strong><a href="https://oosarando2.zeldahacking.net/">next-gen randomizer</a></strong> by <a href="https://github.com/Stewmath">Stewmath</a> which currently maintained and offers features like <strong>keysanity</strong> and <strong>cross-items</strong> (Ages-exclusive items in Seasons and vice versa), as well as other QOL features.
+                You may instead want to use the <strong><a href="https://oosarando.zeldahacking.net/">next-gen randomizer</a></strong> by <a href="https://github.com/Stewmath">Stewmath</a> which currently maintained and offers features like <strong>keysanity</strong> and <strong>cross-items</strong> (Ages-exclusive items in Seasons and vice versa), as well as other QOL features.
               </p>
               <p>
                 You may want to use this version of the randomizer if you want to do a multiworld (only possible on the original randomizer),
